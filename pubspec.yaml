@@ -21,11 +21,19 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  dio: ^5.9.0
+  http: ^1.5.0
+  retry: ^3.1.2
+  json_annotation: ^4.9.0
+  web_socket_channel: ^3.0.3
+  rate_limiter: ^1.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
+  build_runner: ^2.7.0
+  json_serializable: ^6.10.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
