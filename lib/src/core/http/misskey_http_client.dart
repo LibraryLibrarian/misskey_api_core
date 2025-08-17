@@ -22,6 +22,7 @@ class MisskeyHttpClient {
     required this.config,
     this.tokenProvider,
     this.logger,
+    HttpClientAdapter? httpClientAdapter,
   }) {
     final baseOptions = BaseOptions(
       baseUrl: _ensureApiBase(config.baseUrl).toString(),
@@ -36,12 +37,17 @@ class MisskeyHttpClient {
       },
     );
     _dio = Dio(baseOptions);
+    if (httpClientAdapter != null) {
+      _dio.httpClientAdapter = httpClientAdapter;
+    }
 
-    _dio.interceptors.add(_MisskeyInterceptor(
-      tokenProvider: tokenProvider,
-      enableLog: config.enableLog,
-      logger: logger ?? const StdoutLogger(),
-    ));
+    _dio.interceptors.add(
+      _MisskeyInterceptor(
+        tokenProvider: tokenProvider,
+        enableLog: config.enableLog,
+        logger: logger ?? const StdoutLogger(),
+      ),
+    );
   }
 
   /// `path` は `/notes/create` のように `/api` より後のパスを渡す
@@ -67,9 +73,7 @@ class MisskeyHttpClient {
             data: body,
             options: Options(
               method: method,
-              extra: {
-                'authRequired': options.authRequired,
-              },
+              extra: {'authRequired': options.authRequired},
             ),
             cancelToken: cancelToken,
           );
@@ -92,8 +96,9 @@ class MisskeyHttpClient {
 
   static Uri _ensureApiBase(Uri base) {
     // 末尾に `/api` がなければ付与
-    final normalized =
-        base.replace(path: base.path.replaceAll(RegExp(r"/+$"), ''));
+    final normalized = base.replace(
+      path: base.path.replaceAll(RegExp(r"/+$"), ''),
+    );
     final path = normalized.path.endsWith('/api')
         ? normalized.path
         : '${normalized.path.isEmpty ? '' : normalized.path}/api';
@@ -118,8 +123,29 @@ class MisskeyHttpClient {
 
   static MisskeyApiException _mapDioError(DioException e) {
     final status = e.response?.statusCode;
-    final message = e.message ?? 'HTTP error';
-    return MisskeyApiException(statusCode: status, message: message, raw: e);
+    String message = e.message ?? 'HTTP error';
+    String? code;
+    final data = e.response?.data;
+    if (data is Map) {
+      final dynamic errorObj = data['error'];
+      if (errorObj is Map) {
+        final dynamic c = errorObj['code'];
+        final dynamic m = errorObj['message'];
+        if (c != null) code = c.toString();
+        if (m != null) message = m.toString();
+      } else {
+        final dynamic c = data['code'];
+        final dynamic m = data['message'];
+        if (c != null) code = c.toString();
+        if (m != null) message = m.toString();
+      }
+    }
+    return MisskeyApiException(
+      statusCode: status,
+      code: code,
+      message: message,
+      raw: e,
+    );
   }
 }
 
@@ -136,7 +162,9 @@ class _MisskeyInterceptor extends Interceptor {
 
   @override
   void onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) async {
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     // 認証付与（POSTのみ、かつ body が Map のとき）
     final extra = options.extra;
     final authRequired = (extra['authRequired'] as bool?) ?? true;

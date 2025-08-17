@@ -4,3 +4,5 @@ export 'src/core/http/misskey_http_client.dart';
 export 'src/core/http/request_options.dart';
 export 'src/core/error/misskey_api_exception.dart';
 export 'src/core/logging/logger.dart';
+export 'src/meta/meta_client.dart';
+export 'src/models/meta.dart';
