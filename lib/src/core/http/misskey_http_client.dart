@@ -1,12 +1,13 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:retry/retry.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:retry/retry.dart';
 
 import '../auth/token_provider.dart';
 import '../config/misskey_api_config.dart';
 import '../error/misskey_api_exception.dart';
+import '../logging/function_logger.dart';
 import '../logging/logger.dart';
 import 'request_options.dart' as ro;
 
@@ -15,15 +16,21 @@ class MisskeyHttpClient {
   final MisskeyApiConfig config;
   final TokenProvider? tokenProvider;
   final Logger? logger;
+  final Object Function(Object error)? exceptionMapper;
+
+  /// 公開ベースURL（`/api` 付与前の元URL）
+  Uri get baseUrl => config.baseUrl;
 
   late final Dio _dio;
 
   MisskeyHttpClient({
     required this.config,
     this.tokenProvider,
-    this.logger,
+    Logger? logger,
+    this.exceptionMapper,
+    void Function(String level, String message)? loggerFn,
     HttpClientAdapter? httpClientAdapter,
-  }) {
+  }) : logger = logger ?? (loggerFn != null ? FunctionLogger(loggerFn) : null) {
     final baseOptions = BaseOptions(
       baseUrl: _ensureApiBase(config.baseUrl).toString(),
       connectTimeout: config.timeout,
@@ -65,6 +72,7 @@ class MisskeyHttpClient {
       randomizationFactor: 0.25,
     );
 
+    // リトライオプションに従い、Dioを使ってHTTPリクエストを送信し、必要に応じてリトライを行う処理
     try {
       final result = await r.retry(
         () async {
@@ -88,9 +96,11 @@ class MisskeyHttpClient {
       );
       return result.data as T;
     } on DioException catch (e) {
-      throw _mapDioError(e);
+      final err = _mapDioError(e);
+      throw exceptionMapper != null ? exceptionMapper!(err) : err;
     } catch (e) {
-      throw MisskeyApiException(message: 'Unexpected error', raw: e);
+      final err = MisskeyApiException(message: 'Unexpected error', raw: e);
+      throw exceptionMapper != null ? exceptionMapper!(err) : err;
     }
   }
 

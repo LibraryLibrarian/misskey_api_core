@@ -33,7 +33,7 @@ class _CapturingAdapter implements dio.HttpClientAdapter {
 
 void main() {
   /// authRequiredがtrueのPOSTでは、JSON bodyにトークン`i`が自動注入されることを検証
-  test('injects i when authRequired=true (POST)', () async {
+  test('authRequired=true のPOSTでは、JSON bodyにトークン`i`が自動注入されることを検証', () async {
     final adapter = _CapturingAdapter();
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(baseUrl: Uri.parse('https://example.com')),
@@ -55,7 +55,7 @@ void main() {
   });
 
   /// authRequiredがfalseのPOSTでは、`i`が注入されないことを検証
-  test('does not inject i when authRequired=false (POST)', () async {
+  test('authRequired=false のPOSTでは、`i`が注入されないことを検証', () async {
     final adapter = _CapturingAdapter();
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(baseUrl: Uri.parse('https://example.com')),

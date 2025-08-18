@@ -38,7 +38,7 @@ class _FlakyAdapter implements dio.HttpClientAdapter {
 
 void main() {
   /// idempotent=true の場合、503など一時エラーで所定回数だけリトライして成功することを検証
-  test('retries when idempotent=true and server errors', () async {
+  test('idempotent=true の場合、503など一時エラーで所定回数だけリトライして成功することを検証', () async {
     final adapter = _FlakyAdapter(2);
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(
@@ -63,7 +63,7 @@ void main() {
   });
 
   /// idempotent=false の場合、リトライせずに例外を投げることを検証
-  test('does not retry when idempotent=false', () async {
+  test('idempotent=false の場合、リトライせずに例外を投げることを検証', () async {
     final adapter = _FlakyAdapter(1);
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(

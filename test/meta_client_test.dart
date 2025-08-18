@@ -34,7 +34,7 @@ class _MetaAdapter implements dio.HttpClientAdapter {
 void main() {
   /// `MetaClient.getMeta()` が結果をキャッシュし、
   /// `supports()` で機能有無が正しく判定できることを検証する
-  test('MetaClient caches and supports() works', () async {
+  test('MetaClient がキャッシュを効かせて機能有無を正しく判定できることを検証', () async {
     final adapter = _MetaAdapter({
       'version': '2024.12.0',
       'name': 'misskey.example',

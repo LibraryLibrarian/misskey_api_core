@@ -34,7 +34,7 @@ class _ErrorAdapter implements dio.HttpClientAdapter {
 void main() {
   /// `{ error: { code, message } }` 形式のMisskeyエラーが
   /// `MisskeyApiException(code, message, statusCode)` に正規化されることを検証
-  test('maps Misskey error format with nested error object', () async {
+  test('Misskeyエラーフォーマットが正規化されることを検証', () async {
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(baseUrl: Uri.parse('https://example.com')),
       httpClientAdapter: _ErrorAdapter(400, {
@@ -55,7 +55,7 @@ void main() {
 
   /// `{ code, message }` のフラットなエラーフォーマットも
   /// 同様に正規化されることを検証する
-  test('maps flat error format too', () async {
+  test('フラットなエラーフォーマットも正規化されることを検証', () async {
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(baseUrl: Uri.parse('https://example.com')),
       httpClientAdapter: _ErrorAdapter(403, {
