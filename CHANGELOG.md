@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.2-beta] - 2025-08-19
+
+### Added
+- Expose `MisskeyHttpClient.baseUrl` (original base, before `/api` normalization).
+- Add `exceptionMapper` hook to `MisskeyHttpClient` to customize thrown exceptions.
+- Add `loggerFn` (function-style logger) accepted by `MisskeyHttpClient` and adapt to existing `Logger` interface.
+- `MetaClient.getMeta({bool refresh = false})` to force-refresh cache when needed.
+
+### Changed
+- Generalize `TokenProvider` to `FutureOr<String?> Function()` to support both sync/async token sources.
+
 ## [0.0.1-beta] - 2025-08-18
 
 ### Added
