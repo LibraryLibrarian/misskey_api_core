@@ -13,8 +13,31 @@ class ExampleApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = ColorScheme.fromSeed(seedColor: Colors.indigo);
     return GlobalLoaderOverlay(
-      child: MaterialApp(title: 'Misskey Core Example', home: const AuthGate()),
+      child: MaterialApp(
+        title: 'Misskey Core Example',
+        theme: ThemeData(
+          colorScheme: scheme,
+          useMaterial3: true,
+          scaffoldBackgroundColor: const Color(0xFFF7F7FA),
+          appBarTheme: AppBarTheme(
+            backgroundColor: scheme.surface,
+            foregroundColor: scheme.onSurface,
+          ),
+          bottomNavigationBarTheme: BottomNavigationBarThemeData(
+            backgroundColor: scheme.surface,
+            selectedItemColor: scheme.primary,
+            unselectedItemColor: scheme.onSurfaceVariant,
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            border: const OutlineInputBorder(),
+            filled: true,
+            fillColor: scheme.surface,
+          ),
+        ),
+        home: const AuthGate(),
+      ),
     );
   }
 }
@@ -33,10 +56,12 @@ class AuthState {
   final bool authenticated;
   final String? accessToken;
   final Uri? baseUrl;
+  final String? selfUserId;
   const AuthState({
     required this.authenticated,
     this.accessToken,
     this.baseUrl,
+    this.selfUserId,
   });
 }
 
@@ -46,7 +71,8 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 
   Future<void> authenticate(BuildContext context) async {
     final instance = Uri.parse(ref.read(instanceUrlProvider));
-    context.loaderOverlay.show();
+    final overlay = context.loaderOverlay;
+    overlay.show();
     try {
       // misskey_auth 側の具体APIはダミー呼び出し（利用者が差し替え）
       final client = MisskeyOAuthClient();
@@ -55,7 +81,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
         clientId: 'https://librarylibrarian.github.io/misskey_api_core/',
         redirectUri:
             'https://librarylibrarian.github.io/misskey_api_core/redirect.html',
-        scope: 'read:notes read:accounts write:notes',
+        scope: 'read:account read:notes write:notes read:following',
         callbackScheme: 'misskeyapicore',
       );
       final token = await client.authenticate(config);
@@ -63,13 +89,31 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
         // キャンセルや失敗時は非認証のまま
         return;
       }
+      // 自分のユーザーIDを取得
+      final tempApi = MisskeyHttpClient(
+        config: MisskeyApiConfig(baseUrl: instance, enableLog: true),
+        tokenProvider: () async => token.accessToken,
+      );
+      String? selfId;
+      try {
+        final me = await tempApi.send<Map<String, dynamic>>(
+          '/i',
+          body: const {},
+          options: const RequestOptions(idempotent: true),
+        );
+        selfId = me['id'] as String?;
+      } catch (_) {
+        selfId = null;
+      }
+
       state = AuthState(
         authenticated: true,
         accessToken: token.accessToken,
         baseUrl: instance,
+        selfUserId: selfId,
       );
     } finally {
-      context.loaderOverlay.hide();
+      overlay.hide();
     }
   }
 }
@@ -148,7 +192,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: pages[_index],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
+        onTap: (i) {
+          // タブ切替時にフォーカスを明示的に外し、キーボードイベントの不整合を回避
+          FocusManager.instance.primaryFocus?.unfocus();
+          setState(() => _index = i);
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.edit), label: 'Post'),
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Timeline'),
@@ -225,12 +273,20 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
   Future<void> _load() async {
     final client = ref.read(httpClientProvider);
     if (client == null) return;
-    final res = await client.send<List<dynamic>>(
-      '/notes/timeline',
-      body: const {'limit': 20},
-      options: const RequestOptions(idempotent: true),
-    );
-    setState(() => notes = res);
+    try {
+      final res = await client.send<List<dynamic>>(
+        '/notes/timeline',
+        body: const {'limit': 20},
+        options: const RequestOptions(idempotent: true),
+      );
+      if (!mounted) return;
+      setState(() => notes = res);
+    } on MisskeyApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Timeline error: ${e.message}')));
+    }
   }
 
   @override
@@ -256,15 +312,41 @@ class FollowingPage extends ConsumerStatefulWidget {
 
 class _FollowingPageState extends ConsumerState<FollowingPage> {
   List<dynamic> users = const [];
+  Map<String, dynamic>? _pickUser(dynamic item) {
+    if (item is Map<String, dynamic>) {
+      if (item['username'] is String) return item;
+      if (item['followee'] is Map) {
+        return (item['followee'] as Map).cast<String, dynamic>();
+      }
+      if (item['user'] is Map) {
+        return (item['user'] as Map).cast<String, dynamic>();
+      }
+      if (item['follower'] is Map) {
+        return (item['follower'] as Map).cast<String, dynamic>();
+      }
+    }
+    return null;
+  }
+
   Future<void> _load() async {
     final client = ref.read(httpClientProvider);
     if (client == null) return;
-    final res = await client.send<List<dynamic>>(
-      '/following',
-      body: const {'limit': 30},
-      options: const RequestOptions(idempotent: true),
-    );
-    setState(() => users = res);
+    final selfId = ref.read(authStateProvider).selfUserId;
+    if (selfId == null) return;
+    try {
+      final res = await client.send<List<dynamic>>(
+        '/users/following',
+        body: {'userId': selfId, 'limit': 30, 'detailed': true},
+        options: const RequestOptions(idempotent: true),
+      );
+      if (!mounted) return;
+      setState(() => users = res);
+    } on MisskeyApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Following error: ${e.message}')));
+    }
   }
 
   @override
@@ -280,8 +362,8 @@ class _FollowingPageState extends ConsumerState<FollowingPage> {
       child: ListView.builder(
         itemCount: users.length,
         itemBuilder: (c, i) => ListTile(
-          title: Text(users[i]['username']?.toString() ?? ''),
-          subtitle: Text(users[i]['host']?.toString() ?? ''),
+          title: Text(_pickUser(users[i])?['username']?.toString() ?? ''),
+          subtitle: Text(_pickUser(users[i])?['host']?.toString() ?? ''),
         ),
       ),
     );
@@ -296,15 +378,41 @@ class FollowersPage extends ConsumerStatefulWidget {
 
 class _FollowersPageState extends ConsumerState<FollowersPage> {
   List<dynamic> users = const [];
+  Map<String, dynamic>? _pickUser(dynamic item) {
+    if (item is Map<String, dynamic>) {
+      if (item['username'] is String) return item;
+      if (item['follower'] is Map) {
+        return (item['follower'] as Map).cast<String, dynamic>();
+      }
+      if (item['user'] is Map) {
+        return (item['user'] as Map).cast<String, dynamic>();
+      }
+      if (item['followee'] is Map) {
+        return (item['followee'] as Map).cast<String, dynamic>();
+      }
+    }
+    return null;
+  }
+
   Future<void> _load() async {
     final client = ref.read(httpClientProvider);
     if (client == null) return;
-    final res = await client.send<List<dynamic>>(
-      '/followers',
-      body: const {'limit': 30},
-      options: const RequestOptions(idempotent: true),
-    );
-    setState(() => users = res);
+    final selfId = ref.read(authStateProvider).selfUserId;
+    if (selfId == null) return;
+    try {
+      final res = await client.send<List<dynamic>>(
+        '/users/followers',
+        body: {'userId': selfId, 'limit': 30, 'detailed': true},
+        options: const RequestOptions(idempotent: true),
+      );
+      if (!mounted) return;
+      setState(() => users = res);
+    } on MisskeyApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Followers error: ${e.message}')));
+    }
   }
 
   @override
@@ -320,8 +428,8 @@ class _FollowersPageState extends ConsumerState<FollowersPage> {
       child: ListView.builder(
         itemCount: users.length,
         itemBuilder: (c, i) => ListTile(
-          title: Text(users[i]['username']?.toString() ?? ''),
-          subtitle: Text(users[i]['host']?.toString() ?? ''),
+          title: Text(_pickUser(users[i])?['username']?.toString() ?? ''),
+          subtitle: Text(_pickUser(users[i])?['host']?.toString() ?? ''),
         ),
       ),
     );
