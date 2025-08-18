@@ -13,6 +13,7 @@ class MisskeyApiException implements Exception {
   });
 
   @override
-  String toString() => 'MisskeyApiException(statusCode: '
-      '${statusCode}, code: ${code}, message: ${message})';
+  String toString() =>
+      'MisskeyApiException(statusCode: '
+      '$statusCode, code: $code, message: $message)';
 }

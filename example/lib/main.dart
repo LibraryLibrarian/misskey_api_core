@@ -230,6 +230,7 @@ class PostNotePage extends ConsumerWidget {
             onPressed: client == null
                 ? null
                 : () async {
+                    final messenger = ScaffoldMessenger.of(context);
                     try {
                       await client.send<Map<String, dynamic>>(
                         '/notes/create',
@@ -237,13 +238,13 @@ class PostNotePage extends ConsumerWidget {
                         options: const RequestOptions(idempotent: false),
                       );
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           const SnackBar(content: Text('Posted!')),
                         );
                         controller.clear();
                       }
                     } on MisskeyApiException catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         SnackBar(content: Text('Error: ${e.message}')),
                       );
                     }
@@ -273,6 +274,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
   Future<void> _load() async {
     final client = ref.read(httpClientProvider);
     if (client == null) return;
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final res = await client.send<List<dynamic>>(
         '/notes/timeline',
@@ -283,9 +285,9 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
       setState(() => notes = res);
     } on MisskeyApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Timeline error: ${e.message}')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('Timeline error: ${e.message}')),
+      );
     }
   }
 
@@ -333,6 +335,7 @@ class _FollowingPageState extends ConsumerState<FollowingPage> {
     if (client == null) return;
     final selfId = ref.read(authStateProvider).selfUserId;
     if (selfId == null) return;
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final res = await client.send<List<dynamic>>(
         '/users/following',
@@ -343,9 +346,9 @@ class _FollowingPageState extends ConsumerState<FollowingPage> {
       setState(() => users = res);
     } on MisskeyApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Following error: ${e.message}')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('Following error: ${e.message}')),
+      );
     }
   }
 
@@ -399,6 +402,7 @@ class _FollowersPageState extends ConsumerState<FollowersPage> {
     if (client == null) return;
     final selfId = ref.read(authStateProvider).selfUserId;
     if (selfId == null) return;
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final res = await client.send<List<dynamic>>(
         '/users/followers',
@@ -409,9 +413,9 @@ class _FollowersPageState extends ConsumerState<FollowersPage> {
       setState(() => users = res);
     } on MisskeyApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Followers error: ${e.message}')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('Followers error: ${e.message}')),
+      );
     }
   }
 

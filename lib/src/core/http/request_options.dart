@@ -6,8 +6,5 @@ class RequestOptions {
   /// 冪等リクエストか。true の場合のみ自動リトライ対象
   final bool idempotent;
 
-  const RequestOptions({
-    this.authRequired = true,
-    this.idempotent = false,
-  });
+  const RequestOptions({this.authRequired = true, this.idempotent = false});
 }
