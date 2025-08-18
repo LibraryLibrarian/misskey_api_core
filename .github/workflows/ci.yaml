@@ -66,10 +66,23 @@ jobs:
         if: ${{ hashFiles('test/**/*_test.dart') != '' }}
         run: flutter test
       - name: Codegen verify (only latest)
-        if: matrix.flutter == '3.32.x'
+        if: matrix.flutter == '3.32.x' && matrix.resolution == 'max'
         run: |
+          set -euo pipefail
+          # build_runner が無い場合はスキップ
+          if ! grep -q 'build_runner:' pubspec.yaml; then
+            echo 'build_runner not found; skipping codegen verify'
+            exit 0
+          fi
+          flutter pub get
           dart run build_runner build -d --build-filter="lib/**"
-          git diff --exit-code || (echo 'Codegen produced changes. Please commit generated files.' && exit 1)
+          # 生成物に差分があれば失敗
+          git update-index -q --refresh
+          if ! git diff --quiet --exit-code -- lib/; then
+            echo 'Codegen produced changes. Please commit generated files.'
+            git --no-pager diff -- lib/ | cat
+            exit 1
+          fi
 
   example-android:
     needs: changes
