@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:misskey_api_core/misskey_api_core.dart';
@@ -51,6 +52,72 @@ final authStateProvider = StateNotifierProvider<AuthStateNotifier, AuthState>((
 ) {
   return AuthStateNotifier(ref);
 });
+
+enum LogLevel { debug, info, warn, error }
+
+class LogEntry {
+  final DateTime time;
+  final LogLevel level;
+  final String message;
+  const LogEntry({
+    required this.time,
+    required this.level,
+    required this.message,
+  });
+}
+
+class LogStore extends StateNotifier<List<LogEntry>> {
+  static const int maxEntries = 500;
+  LogStore() : super(const []);
+
+  void add(LogEntry entry) {
+    final list = List<LogEntry>.from(state)..add(entry);
+    if (list.length > maxEntries) {
+      list.removeRange(0, list.length - maxEntries);
+    }
+    state = list;
+  }
+
+  void clear() => state = const [];
+}
+
+final logStoreProvider = StateNotifierProvider<LogStore, List<LogEntry>>(
+  (ref) => LogStore(),
+);
+
+class InAppLogger implements Logger {
+  final Ref ref;
+  InAppLogger(this.ref);
+
+  String _mask(String input) {
+    return input.replaceAll(RegExp(r'\"i\"\s*:\s*\"[^\"]*\"'), '"i":"***"');
+  }
+
+  void _push(LogLevel level, String message) {
+    ref
+        .read(logStoreProvider.notifier)
+        .add(
+          LogEntry(time: DateTime.now(), level: level, message: _mask(message)),
+        );
+  }
+
+  @override
+  void debug(String message) => _push(LogLevel.debug, message);
+
+  @override
+  void info(String message) => _push(LogLevel.info, message);
+
+  @override
+  void warn(String message) => _push(LogLevel.warn, message);
+
+  @override
+  void error(String message, [Object? error, StackTrace? stackTrace]) {
+    final combined = error == null ? message : '$message error=$error';
+    _push(LogLevel.error, combined);
+  }
+}
+
+final inAppLoggerProvider = Provider<Logger>((ref) => InAppLogger(ref));
 
 class AuthState {
   final bool authenticated;
@@ -124,6 +191,7 @@ final httpClientProvider = Provider<MisskeyHttpClient?>((ref) {
   return MisskeyHttpClient(
     config: MisskeyApiConfig(baseUrl: s.baseUrl!, enableLog: true),
     tokenProvider: () async => s.accessToken,
+    logger: ref.watch(inAppLoggerProvider),
   );
 });
 
@@ -186,9 +254,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       const TimelinePage(),
       const FollowingPage(),
       const FollowersPage(),
+      const LogsPage(),
     ];
     return Scaffold(
-      appBar: AppBar(title: const Text('Misskey Example')),
+      appBar: AppBar(title: const Text('Misskey API Core Example')),
       body: pages[_index],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
@@ -205,6 +274,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             label: 'Following',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Followers'),
+          BottomNavigationBarItem(icon: Icon(Icons.article), label: 'Logs'),
         ],
       ),
     );
@@ -265,16 +335,23 @@ class TimelinePage extends ConsumerStatefulWidget {
 
 class _TimelinePageState extends ConsumerState<TimelinePage> {
   List<dynamic> notes = const [];
+  BuildContext? _overlayCtx;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _overlayCtx != null) _load(_overlayCtx);
+    });
   }
 
-  Future<void> _load() async {
+  Future<void> _load([BuildContext? overlayCtx]) async {
     final client = ref.read(httpClientProvider);
     if (client == null) return;
     final messenger = ScaffoldMessenger.of(context);
+    final ctx = overlayCtx ?? _overlayCtx;
+    if (ctx == null) return;
+    final overlay = ctx.loaderOverlay;
+    overlay.show();
     try {
       final res = await client.send<List<dynamic>>(
         '/notes/timeline',
@@ -288,19 +365,28 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
       messenger.showSnackBar(
         SnackBar(content: Text('Timeline error: ${e.message}')),
       );
+    } finally {
+      if (mounted && _overlayCtx == ctx) overlay.hide();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView.builder(
-        itemCount: notes.length,
-        itemBuilder: (c, i) => ListTile(
-          title: Text(notes[i]['text']?.toString() ?? ''),
-          subtitle: Text(notes[i]['user']?['username']?.toString() ?? ''),
-        ),
+    return LoaderOverlay(
+      child: Builder(
+        builder: (c) {
+          _overlayCtx = c;
+          return RefreshIndicator(
+            onRefresh: () => _load(c),
+            child: ListView.builder(
+              itemCount: notes.length,
+              itemBuilder: (c, i) => ListTile(
+                title: Text(notes[i]['text']?.toString() ?? ''),
+                subtitle: Text(notes[i]['user']?['username']?.toString() ?? ''),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -314,6 +400,7 @@ class FollowingPage extends ConsumerStatefulWidget {
 
 class _FollowingPageState extends ConsumerState<FollowingPage> {
   List<dynamic> users = const [];
+  BuildContext? _overlayCtx;
   Map<String, dynamic>? _pickUser(dynamic item) {
     if (item is Map<String, dynamic>) {
       if (item['username'] is String) return item;
@@ -330,12 +417,16 @@ class _FollowingPageState extends ConsumerState<FollowingPage> {
     return null;
   }
 
-  Future<void> _load() async {
+  Future<void> _load([BuildContext? overlayCtx]) async {
     final client = ref.read(httpClientProvider);
     if (client == null) return;
     final selfId = ref.read(authStateProvider).selfUserId;
     if (selfId == null) return;
     final messenger = ScaffoldMessenger.of(context);
+    final ctx = overlayCtx ?? _overlayCtx;
+    if (ctx == null) return;
+    final overlay = ctx.loaderOverlay;
+    overlay.show();
     try {
       final res = await client.send<List<dynamic>>(
         '/users/following',
@@ -349,25 +440,36 @@ class _FollowingPageState extends ConsumerState<FollowingPage> {
       messenger.showSnackBar(
         SnackBar(content: Text('Following error: ${e.message}')),
       );
+    } finally {
+      if (mounted && _overlayCtx == ctx) overlay.hide();
     }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _overlayCtx != null) _load(_overlayCtx);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView.builder(
-        itemCount: users.length,
-        itemBuilder: (c, i) => ListTile(
-          title: Text(_pickUser(users[i])?['username']?.toString() ?? ''),
-          subtitle: Text(_pickUser(users[i])?['host']?.toString() ?? ''),
-        ),
+    return LoaderOverlay(
+      child: Builder(
+        builder: (c) {
+          _overlayCtx = c;
+          return RefreshIndicator(
+            onRefresh: () => _load(c),
+            child: ListView.builder(
+              itemCount: users.length,
+              itemBuilder: (c, i) => ListTile(
+                title: Text(_pickUser(users[i])?['username']?.toString() ?? ''),
+                subtitle: Text(_pickUser(users[i])?['host']?.toString() ?? ''),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -381,6 +483,7 @@ class FollowersPage extends ConsumerStatefulWidget {
 
 class _FollowersPageState extends ConsumerState<FollowersPage> {
   List<dynamic> users = const [];
+  BuildContext? _overlayCtx;
   Map<String, dynamic>? _pickUser(dynamic item) {
     if (item is Map<String, dynamic>) {
       if (item['username'] is String) return item;
@@ -397,12 +500,16 @@ class _FollowersPageState extends ConsumerState<FollowersPage> {
     return null;
   }
 
-  Future<void> _load() async {
+  Future<void> _load([BuildContext? overlayCtx]) async {
     final client = ref.read(httpClientProvider);
     if (client == null) return;
     final selfId = ref.read(authStateProvider).selfUserId;
     if (selfId == null) return;
     final messenger = ScaffoldMessenger.of(context);
+    final ctx = overlayCtx ?? _overlayCtx;
+    if (ctx == null) return;
+    final overlay = ctx.loaderOverlay;
+    overlay.show();
     try {
       final res = await client.send<List<dynamic>>(
         '/users/followers',
@@ -416,26 +523,117 @@ class _FollowersPageState extends ConsumerState<FollowersPage> {
       messenger.showSnackBar(
         SnackBar(content: Text('Followers error: ${e.message}')),
       );
+    } finally {
+      if (mounted && _overlayCtx == ctx) overlay.hide();
     }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _overlayCtx != null) _load(_overlayCtx);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView.builder(
-        itemCount: users.length,
-        itemBuilder: (c, i) => ListTile(
-          title: Text(_pickUser(users[i])?['username']?.toString() ?? ''),
-          subtitle: Text(_pickUser(users[i])?['host']?.toString() ?? ''),
-        ),
+    return LoaderOverlay(
+      child: Builder(
+        builder: (c) {
+          _overlayCtx = c;
+          return RefreshIndicator(
+            onRefresh: () => _load(c),
+            child: ListView.builder(
+              itemCount: users.length,
+              itemBuilder: (c, i) => ListTile(
+                title: Text(_pickUser(users[i])?['username']?.toString() ?? ''),
+                subtitle: Text(_pickUser(users[i])?['host']?.toString() ?? ''),
+              ),
+            ),
+          );
+        },
       ),
+    );
+  }
+}
+
+class LogsPage extends ConsumerWidget {
+  const LogsPage({super.key});
+
+  Color _levelColor(BuildContext context, LogLevel level) {
+    final scheme = Theme.of(context).colorScheme;
+    switch (level) {
+      case LogLevel.debug:
+        return scheme.onSurfaceVariant;
+      case LogLevel.info:
+        return scheme.primary;
+      case LogLevel.warn:
+        return Colors.orange;
+      case LogLevel.error:
+        return scheme.error;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final logs = ref.watch(logStoreProvider);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  ref.read(logStoreProvider.notifier).clear();
+                },
+                icon: const Icon(Icons.clear_all),
+                label: const Text('Clear'),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: logs.isEmpty
+                    ? null
+                    : () async {
+                        final text = logs
+                            .map(
+                              (e) =>
+                                  '[${e.time.toIso8601String()}] ${e.level.name.toUpperCase()} ${e.message}',
+                            )
+                            .join('\n');
+                        await Clipboard.setData(ClipboardData(text: text));
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Copied logs')),
+                          );
+                        }
+                      },
+                icon: const Icon(Icons.copy),
+                label: const Text('Copy'),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: ListView.builder(
+            reverse: true,
+            itemCount: logs.length,
+            itemBuilder: (c, i) {
+              final e = logs[logs.length - 1 - i];
+              return ListTile(
+                dense: true,
+                title: Text(
+                  e.message,
+                  style: TextStyle(color: _levelColor(context, e.level)),
+                ),
+                subtitle: Text(e.time.toIso8601String()),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
