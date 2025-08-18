@@ -9,9 +9,14 @@ Misskey API Core is a Dart/Flutter package that provides the core building block
 ### Key Features
 
 - HTTP foundation: base URL handling (/api), timeouts, idempotent retries (429/5xx/network), request/response logging (debug-only)
+- Base URL exposure: access original base URL via `client.baseUrl` for derived services
 - Auth token injection: automatically injects `i` into POST JSON bodies when `authRequired` is true
+- Flexible token providers: support both sync and async token sources via `FutureOr<String?>`
 - Unified error: normalize Misskey error response to `MisskeyApiException(statusCode/code/message)`
+- Customizable error handling: map exceptions via `exceptionMapper` for unified error policies
+- Flexible logging: use `loggerFn` for function-style logging or existing `Logger` interface
 - Meta capability: `/api/meta` client with a tiny cache and `supports()` helper
+- Meta refresh: force-refresh cached meta data with `getMeta(refresh: true)`
 - JSON serialization: `json_serializable`-ready common model(s)
 
 ### Install
@@ -20,7 +25,7 @@ Add to `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  misskey_api_core: ^0.0.1-beta
+  misskey_api_core: ^0.0.2-beta
 ```
 
 Then:
@@ -41,11 +46,14 @@ void main() async {
       timeout: const Duration(seconds: 10),
       enableLog: true, // logs only in debug mode
     ),
-    tokenProvider: () async => 'YOUR_TOKEN',
+    tokenProvider: () async => 'YOUR_TOKEN', // or sync: () => 'TOKEN'
   );
 
   // Fetch meta (no auth)
   final meta = await MetaClient(client).getMeta();
+  
+  // Force refresh meta data
+  final freshMeta = await MetaClient(client).getMeta(refresh: true);
 
   // Example POST (token `i` will be injected automatically)
   final res = await client.send<List<dynamic>>(
@@ -53,6 +61,9 @@ void main() async {
     body: {'limit': 10},
     options: const RequestOptions(idempotent: true),
   );
+  
+  // Access base URL for derived services (e.g., streaming)
+  final origin = client.baseUrl;
 }
 ```
 
@@ -73,9 +84,14 @@ Misskey API Core は、Misskeyサーバーと連携するためのDart/Flutter�
 ### 機能
 
 - HTTP基盤: ベースURL（/api付与）・タイムアウト・冪等時の自動リトライ（429/5xx/ネットワーク）・デバッグ時のみログ
+- ベースURL公開: `client.baseUrl` で元URLにアクセス（派生サービス用）
 - 認証: POSTのJSONボディに `i` を自動注入（`authRequired`で制御）
+- 柔軟なトークン供給: 同期・非同期両方に対応（`FutureOr<String?>`）
 - 共通例外: Misskeyのエラーを `MisskeyApiException(statusCode/code/message)` に正規化
+- カスタマイズ可能な例外処理: `exceptionMapper` で例外を一元変換
+- 柔軟なログ出力: 関数ベースロガー（`loggerFn`）または既存Logger IF
 - メタ/能力検出: `/api/meta` の取得と簡易キャッシュ、`supports()` ヘルパー
+- メタ更新: `getMeta(refresh: true)` でキャッシュを強制更新
 - JSONシリアライズ: `json_serializable`対応の共通モデル
 
 ### インストール
@@ -84,7 +100,7 @@ Misskey API Core は、Misskeyサーバーと連携するためのDart/Flutter�
 
 ```yaml
 dependencies:
-  misskey_api_core: ^0.0.1-beta
+  misskey_api_core: ^0.0.2-beta
 ```
 
 実行:
@@ -104,11 +120,14 @@ final client = MisskeyHttpClient(
     timeout: const Duration(seconds: 10),
     enableLog: true, // デバッグ時のみ
   ),
-  tokenProvider: () async => 'YOUR_TOKEN',
+  tokenProvider: () async => 'YOUR_TOKEN', // または同期: () => 'TOKEN'
 );
 
 // 認証不要
 final meta = await MetaClient(client).getMeta();
+
+// メタデータを強制更新
+final freshMeta = await MetaClient(client).getMeta(refresh: true);
 
 // 読み取り系POST（`i`は自動注入）
 final list = await client.send<List<dynamic>>(
@@ -116,6 +135,9 @@ final list = await client.send<List<dynamic>>(
   body: {'limit': 10},
   options: const RequestOptions(idempotent: true),
 );
+
+// 派生サービス用にベースURLにアクセス（例: ストリーミング）
+final origin = client.baseUrl;
 ```
 
 サンプルアプリ（`/example`）では、`misskey_auth` を使った認証、ノート投稿、ホームタイムライン、フォロー中/フォロワーの取得まで一通り確認できます。
