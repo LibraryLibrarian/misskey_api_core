@@ -3,7 +3,7 @@ description: Example app for misskey_api_core using misskey_auth, Riverpod and l
 publish_to: 'none'
 
 environment:
-  sdk: ">=3.8.0 <4.0.0"
+  sdk: ">=3.5.0 <4.0.0"
   flutter: ">=3.24.0"
 
 dependencies:

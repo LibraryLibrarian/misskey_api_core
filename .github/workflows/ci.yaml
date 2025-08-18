@@ -68,7 +68,7 @@ jobs:
       - name: Codegen verify (only latest)
         if: matrix.flutter == '3.32.x'
         run: |
-          dart run build_runner build -d --build-filter=lib/**
+          dart run build_runner build -d --build-filter="lib/**"
           git diff --exit-code || (echo 'Codegen produced changes. Please commit generated files.' && exit 1)
 
   example-android:
