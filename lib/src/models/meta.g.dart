@@ -7,7 +7,7 @@ part of 'meta.dart';
 // **************************************************************************
 
 Map<String, dynamic> _$MetaToJson(Meta instance) => <String, dynamic>{
-      'version': instance.version,
-      'name': instance.name,
-      'raw': instance.raw,
-    };
+  'version': instance.version,
+  'name': instance.name,
+  'raw': instance.raw,
+};
