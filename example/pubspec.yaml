@@ -1,0 +1,26 @@
+name: misskey_api_core_example
+description: Example app for misskey_api_core using misskey_auth, Riverpod and loader_overlay.
+publish_to: 'none'
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  loader_overlay: ^2.3.2
+  misskey_auth: any
+  misskey_api_core:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+
