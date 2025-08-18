@@ -1,5 +1,5 @@
 name: misskey_api_core
-description: "A new Flutter package project."
+description: "A library to make it easy to use the Misskey API in your Flutter and Dart apps."
 version: 0.0.1-beta
 homepage: https://librarylibrarian.com/
 repository: https://github.com/LibraryLibrarian/misskey_api_core
