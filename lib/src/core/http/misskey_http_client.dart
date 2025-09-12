@@ -79,10 +79,7 @@ class MisskeyHttpClient {
           final Response<dynamic> res = await _dio.request(
             path.startsWith('/') ? path : '/$path',
             data: body,
-            options: Options(
-              method: method,
-              extra: {'authRequired': options.authRequired},
-            ),
+            options: Options(method: method, extra: {'authRequired': options.authRequired}),
             cancelToken: cancelToken,
           );
           return res;
@@ -106,9 +103,7 @@ class MisskeyHttpClient {
 
   static Uri _ensureApiBase(Uri base) {
     // 末尾に `/api` がなければ付与
-    final normalized = base.replace(
-      path: base.path.replaceAll(RegExp(r"/+$"), ''),
-    );
+    final normalized = base.replace(path: base.path.replaceAll(RegExp(r"/+$"), ''));
     final path = normalized.path.endsWith('/api')
         ? normalized.path
         : '${normalized.path.isEmpty ? '' : normalized.path}/api';
@@ -150,12 +145,7 @@ class MisskeyHttpClient {
         if (m != null) message = m.toString();
       }
     }
-    return MisskeyApiException(
-      statusCode: status,
-      code: code,
-      message: message,
-      raw: e,
-    );
+    return MisskeyApiException(statusCode: status, code: code, message: message, raw: e);
   }
 }
 
@@ -164,17 +154,10 @@ class _MisskeyInterceptor extends Interceptor {
   final bool enableLog;
   final Logger logger;
 
-  _MisskeyInterceptor({
-    required this.tokenProvider,
-    required this.enableLog,
-    required this.logger,
-  });
+  _MisskeyInterceptor({required this.tokenProvider, required this.enableLog, required this.logger});
 
   @override
-  void onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) async {
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     // 認証付与（POSTのみ、かつ body が Map のとき）
     final extra = options.extra;
     final authRequired = (extra['authRequired'] as bool?) ?? true;

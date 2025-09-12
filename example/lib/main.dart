@@ -22,10 +22,7 @@ class ExampleApp extends StatelessWidget {
           colorScheme: scheme,
           useMaterial3: true,
           scaffoldBackgroundColor: const Color(0xFFF7F7FA),
-          appBarTheme: AppBarTheme(
-            backgroundColor: scheme.surface,
-            foregroundColor: scheme.onSurface,
-          ),
+          appBarTheme: AppBarTheme(backgroundColor: scheme.surface, foregroundColor: scheme.onSurface),
           bottomNavigationBarTheme: BottomNavigationBarThemeData(
             backgroundColor: scheme.surface,
             selectedItemColor: scheme.primary,
@@ -43,13 +40,9 @@ class ExampleApp extends StatelessWidget {
   }
 }
 
-final instanceUrlProvider = StateProvider<String>(
-  (ref) => 'https://misskey.io',
-);
+final instanceUrlProvider = StateProvider<String>((ref) => 'https://misskey.io');
 
-final authStateProvider = StateNotifierProvider<AuthStateNotifier, AuthState>((
-  ref,
-) {
+final authStateProvider = StateNotifierProvider<AuthStateNotifier, AuthState>((ref) {
   return AuthStateNotifier(ref);
 });
 
@@ -59,11 +52,7 @@ class LogEntry {
   final DateTime time;
   final LogLevel level;
   final String message;
-  const LogEntry({
-    required this.time,
-    required this.level,
-    required this.message,
-  });
+  const LogEntry({required this.time, required this.level, required this.message});
 }
 
 class LogStore extends StateNotifier<List<LogEntry>> {
@@ -81,9 +70,7 @@ class LogStore extends StateNotifier<List<LogEntry>> {
   void clear() => state = const [];
 }
 
-final logStoreProvider = StateNotifierProvider<LogStore, List<LogEntry>>(
-  (ref) => LogStore(),
-);
+final logStoreProvider = StateNotifierProvider<LogStore, List<LogEntry>>((ref) => LogStore());
 
 class InAppLogger implements Logger {
   final Ref ref;
@@ -94,11 +81,7 @@ class InAppLogger implements Logger {
   }
 
   void _push(LogLevel level, String message) {
-    ref
-        .read(logStoreProvider.notifier)
-        .add(
-          LogEntry(time: DateTime.now(), level: level, message: _mask(message)),
-        );
+    ref.read(logStoreProvider.notifier).add(LogEntry(time: DateTime.now(), level: level, message: _mask(message)));
   }
 
   @override
@@ -124,12 +107,7 @@ class AuthState {
   final String? accessToken;
   final Uri? baseUrl;
   final String? selfUserId;
-  const AuthState({
-    required this.authenticated,
-    this.accessToken,
-    this.baseUrl,
-    this.selfUserId,
-  });
+  const AuthState({required this.authenticated, this.accessToken, this.baseUrl, this.selfUserId});
 }
 
 class AuthStateNotifier extends StateNotifier<AuthState> {
@@ -146,8 +124,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
       final config = MisskeyOAuthConfig(
         host: instance.host,
         clientId: 'https://librarylibrarian.github.io/misskey_api_core/',
-        redirectUri:
-            'https://librarylibrarian.github.io/misskey_api_core/redirect.html',
+        redirectUri: 'https://librarylibrarian.github.io/misskey_api_core/redirect.html',
         scope: 'read:account read:notes write:notes read:following',
         callbackScheme: 'misskeyapicore',
       );
@@ -173,12 +150,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
         selfId = null;
       }
 
-      state = AuthState(
-        authenticated: true,
-        accessToken: token.accessToken,
-        baseUrl: instance,
-        selfUserId: selfId,
-      );
+      state = AuthState(authenticated: true, accessToken: token.accessToken, baseUrl: instance, selfUserId: selfId);
     } finally {
       overlay.hide();
     }
@@ -223,13 +195,11 @@ class AuthScreen extends ConsumerWidget {
             TextField(
               decoration: const InputDecoration(labelText: 'Instance URL'),
               controller: TextEditingController(text: instanceUrl),
-              onSubmitted: (v) =>
-                  ref.read(instanceUrlProvider.notifier).state = v,
+              onSubmitted: (v) => ref.read(instanceUrlProvider.notifier).state = v,
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () =>
-                  ref.read(authStateProvider.notifier).authenticate(context),
+              onPressed: () => ref.read(authStateProvider.notifier).authenticate(context),
               child: const Text('Authenticate'),
             ),
           ],
@@ -269,10 +239,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.edit), label: 'Post'),
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Timeline'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_add),
-            label: 'Following',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person_add), label: 'Following'),
           BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Followers'),
           BottomNavigationBarItem(icon: Icon(Icons.article), label: 'Logs'),
         ],
@@ -308,15 +275,11 @@ class PostNotePage extends ConsumerWidget {
                         options: const RequestOptions(idempotent: false),
                       );
                       if (context.mounted) {
-                        messenger.showSnackBar(
-                          const SnackBar(content: Text('Posted!')),
-                        );
+                        messenger.showSnackBar(const SnackBar(content: Text('Posted!')));
                         controller.clear();
                       }
                     } on MisskeyApiException catch (e) {
-                      messenger.showSnackBar(
-                        SnackBar(content: Text('Error: ${e.message}')),
-                      );
+                      messenger.showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
                     }
                   },
             child: const Text('Post'),
@@ -362,9 +325,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
       setState(() => notes = res);
     } on MisskeyApiException catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('Timeline error: ${e.message}')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text('Timeline error: ${e.message}')));
     } finally {
       if (mounted && _overlayCtx == ctx) overlay.hide();
     }
@@ -437,9 +398,7 @@ class _FollowingPageState extends ConsumerState<FollowingPage> {
       setState(() => users = res);
     } on MisskeyApiException catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('Following error: ${e.message}')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text('Following error: ${e.message}')));
     } finally {
       if (mounted && _overlayCtx == ctx) overlay.hide();
     }
@@ -520,9 +479,7 @@ class _FollowersPageState extends ConsumerState<FollowersPage> {
       setState(() => users = res);
     } on MisskeyApiException catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('Followers error: ${e.message}')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text('Followers error: ${e.message}')));
     } finally {
       if (mounted && _overlayCtx == ctx) overlay.hide();
     }
@@ -597,16 +554,11 @@ class LogsPage extends ConsumerWidget {
                     ? null
                     : () async {
                         final text = logs
-                            .map(
-                              (e) =>
-                                  '[${e.time.toIso8601String()}] ${e.level.name.toUpperCase()} ${e.message}',
-                            )
+                            .map((e) => '[${e.time.toIso8601String()}] ${e.level.name.toUpperCase()} ${e.message}')
                             .join('\n');
                         await Clipboard.setData(ClipboardData(text: text));
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Copied logs')),
-                          );
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied logs')));
                         }
                       },
                 icon: const Icon(Icons.copy),
@@ -624,10 +576,7 @@ class LogsPage extends ConsumerWidget {
               final e = logs[logs.length - 1 - i];
               return ListTile(
                 dense: true,
-                title: Text(
-                  e.message,
-                  style: TextStyle(color: _levelColor(context, e.level)),
-                ),
+                title: Text(e.message, style: TextStyle(color: _levelColor(context, e.level))),
                 subtitle: Text(e.time.toIso8601String()),
               );
             },

@@ -83,13 +83,7 @@ void main() {
         body: const {},
         options: const core.RequestOptions(idempotent: false),
       ),
-      throwsA(
-        isA<core.MisskeyApiException>().having(
-          (e) => e.statusCode,
-          'status',
-          503,
-        ),
-      ),
+      throwsA(isA<core.MisskeyApiException>().having((e) => e.statusCode, 'status', 503)),
     );
     // 再試行しないこと（1回のみ）
     expect(adapter.attempts, 1);

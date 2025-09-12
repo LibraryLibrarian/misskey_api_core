@@ -5,12 +5,7 @@ class MisskeyApiException implements Exception {
   final String message;
   final Object? raw;
 
-  const MisskeyApiException({
-    this.statusCode,
-    this.code,
-    required this.message,
-    this.raw,
-  });
+  const MisskeyApiException({this.statusCode, this.code, required this.message, this.raw});
 
   @override
   String toString() =>

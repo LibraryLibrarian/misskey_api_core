@@ -4,11 +4,7 @@ part 'meta.g.dart';
 
 /// Misskey `/api/meta` の最小モデル（ドメイン非依存）
 /// - 未知フィールドを含む全JSONを `raw` に保持し、能力検出で活用できるように
-@JsonSerializable(
-  explicitToJson: true,
-  createFactory: false,
-  createToJson: true,
-)
+@JsonSerializable(explicitToJson: true, createFactory: false, createToJson: true)
 class Meta {
   /// サーバーバージョン（例: "2024.12.0"）
   final String? version;

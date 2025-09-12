@@ -58,10 +58,7 @@ void main() {
   test('フラットなエラーフォーマットも正規化されることを検証', () async {
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(baseUrl: Uri.parse('https://example.com')),
-      httpClientAdapter: _ErrorAdapter(403, {
-        'code': 'FORBIDDEN',
-        'message': 'nope',
-      }),
+      httpClientAdapter: _ErrorAdapter(403, {'code': 'FORBIDDEN', 'message': 'nope'}),
     );
 
     expect(
