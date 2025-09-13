@@ -40,7 +40,6 @@ class MisskeyHttpClient {
         ...config.defaultHeaders,
         if (config.userAgent != null) 'User-Agent': config.userAgent,
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
       },
     );
     _dio = Dio(baseOptions);
@@ -58,12 +57,17 @@ class MisskeyHttpClient {
   }
 
   /// `path` は `/notes/create` のように `/api` より後のパスを渡す
+  ///
+  /// [body] には `Map<String,dynamic>`（JSON）・`FormData`（multipart）・`null` を指定可能
+  /// [options] で `contentType`/`headers`/`extra` をリクエスト単位で上書きできる
+  /// アップロード時は [onSendProgress] で進捗を受け取れる
   Future<T> send<T>(
     String path, {
     String method = 'POST',
-    Map<String, dynamic>? body,
+    dynamic body,
     ro.RequestOptions options = const ro.RequestOptions(),
     CancelToken? cancelToken,
+    void Function(int, int)? onSendProgress,
   }) async {
     final r = RetryOptions(
       maxAttempts: options.idempotent ? config.maxRetries : 1,
@@ -76,11 +80,18 @@ class MisskeyHttpClient {
     try {
       final result = await r.retry(
         () async {
+          final reqOptions = Options(
+            method: method,
+            contentType: options.contentType,
+            headers: options.headers.isEmpty ? null : Map<String, dynamic>.from(options.headers),
+            extra: {'authRequired': options.authRequired, ...options.extra},
+          );
           final Response<dynamic> res = await _dio.request(
             path.startsWith('/') ? path : '/$path',
             data: body,
-            options: Options(method: method, extra: {'authRequired': options.authRequired}),
+            options: reqOptions,
             cancelToken: cancelToken,
+            onSendProgress: onSendProgress,
           );
           return res;
         },
@@ -130,6 +141,7 @@ class MisskeyHttpClient {
     final status = e.response?.statusCode;
     String message = e.message ?? 'HTTP error';
     String? code;
+    Duration? retryAfter;
     final data = e.response?.data;
     if (data is Map) {
       final dynamic errorObj = data['error'];
@@ -145,7 +157,14 @@ class MisskeyHttpClient {
         if (m != null) message = m.toString();
       }
     }
-    return MisskeyApiException(statusCode: status, code: code, message: message, raw: e);
+    final ra = e.response?.headers.value('retry-after');
+    if (ra != null) {
+      final seconds = int.tryParse(ra.trim());
+      if (seconds != null) {
+        retryAfter = Duration(seconds: seconds);
+      }
+    }
+    return MisskeyApiException(statusCode: status, code: code, message: message, raw: e, retryAfter: retryAfter);
   }
 }
 
@@ -158,7 +177,7 @@ class _MisskeyInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    // 認証付与（POSTのみ、かつ body が Map のとき）
+    // 認証付与（POSTのみ、Map/FormData/空bodyに対応）
     final extra = options.extra;
     final authRequired = (extra['authRequired'] as bool?) ?? true;
     if (authRequired && options.method.toUpperCase() == 'POST') {
@@ -166,7 +185,14 @@ class _MisskeyInterceptor extends Interceptor {
       if (token != null && token.isNotEmpty) {
         final data = options.data;
         if (data is Map<String, dynamic>) {
-          options.data = <String, dynamic>{...data, 'i': token};
+          if (!data.containsKey('i')) {
+            options.data = <String, dynamic>{...data, 'i': token};
+          }
+        } else if (data is FormData) {
+          final hasI = data.fields.any((e) => e.key == 'i');
+          if (!hasI) {
+            data.fields.add(MapEntry('i', token));
+          }
         } else if (data == null) {
           options.data = <String, dynamic>{'i': token};
         }
