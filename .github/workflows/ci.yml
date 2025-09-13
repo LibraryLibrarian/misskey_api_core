@@ -1,3 +1,4 @@
+# .github/workflows/ci.yml
 name: CI
 on:
   push: { branches: [ main ] }
@@ -10,9 +11,20 @@ jobs:
         flutter: [ '3.24.0', 'stable' ] # 3.24.0 = Dart 3.5系, stable = 最新
     steps:
       - uses: actions/checkout@v4
+
+      # stable（最新）用：channelのみ指定
       - uses: subosito/flutter-action@v2
+        if: ${{ matrix.flutter == 'stable' }}
         with:
+          channel: stable
+
+      # 固定バージョン用：flutter-versionを指定（必要ならchannelもstable）
+      - uses: subosito/flutter-action@v2
+        if: ${{ matrix.flutter != 'stable' }}
+        with:
+          channel: stable
           flutter-version: ${{ matrix.flutter }}
+
       - run: flutter --version && dart --version
       - run: flutter pub get
       - run: dart analyze
