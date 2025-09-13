@@ -1,0 +1,25 @@
+name: CI
+on:
+  push: { branches: [ main ] }
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flutter: [ '3.24.0', 'stable' ] # 3.24.0 = Dart 3.5系, stable = 最新
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.flutter }}
+      - run: flutter --version && dart --version
+      - run: flutter pub get
+      - run: dart analyze
+      - run: flutter test
+      - name: Example
+        working-directory: example
+        run: |
+          flutter pub get
+          dart analyze
+          flutter test
