@@ -9,6 +9,7 @@ Misskey API Core is a Dart/Flutter package that provides the core building block
 ### Key Features
 
 - HTTP foundation: base URL handling (/api), timeouts, idempotent retries (429/5xx/network), request/response logging (debug-only)
+- Multipart uploads: `FormData` support with auto token injection and upload progress callback (`onSendProgress`)
 - Base URL exposure: access original base URL via `client.baseUrl` for derived services
 - Auth token injection: automatically injects `i` into POST JSON bodies when `authRequired` is true
 - Flexible token providers: support both sync and async token sources via `FutureOr<String?>`
@@ -25,7 +26,7 @@ Add to `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  misskey_api_core: ^0.0.2-beta
+  misskey_api_core: ^0.0.3-beta
 ```
 
 Then:
@@ -61,6 +62,39 @@ void main() async {
     body: {'limit': 10},
     options: const RequestOptions(idempotent: true),
   );
+
+  // Multipart upload (e.g., Drive files/create)
+  final formData = FormData.fromMap({
+    'file': await MultipartFile.fromFile('/path/to/image.png', filename: 'image.png'),
+    // `i` is auto-injected when authRequired=true (default)
+  });
+  await client.send<Map<String, dynamic>>(
+    '/drive/files/create',
+    body: formData,
+    onSendProgress: (sent, total) {
+      // update UI progress
+    },
+  );
+
+  // Per-request overrides
+  await client.send(
+    '/some/endpoint',
+    body: {'a': 1},
+    options: const RequestOptions(
+      contentType: 'application/json; charset=utf-8',
+      headers: {'X-Foo': 'bar'},
+      extra: {'traceId': 'abc-123'},
+    ),
+  );
+
+  // Handle 429 Retry-After
+  try {
+    await client.send('/rate-limited');
+  } on MisskeyApiException catch (e) {
+    if (e.statusCode == 429 && e.retryAfter != null) {
+      await Future.delayed(e.retryAfter!);
+    }
+  }
   
   // Access base URL for derived services (e.g., streaming)
   final origin = client.baseUrl;
@@ -84,6 +118,7 @@ Misskey API Core は、Misskeyサーバーと連携するためのDart/Flutter�
 ### 機能
 
 - HTTP基盤: ベースURL（/api付与）・タイムアウト・冪等時の自動リトライ（429/5xx/ネットワーク）・デバッグ時のみログ
+- マルチパート: `FormData` によるアップロード対応（トークン自動注入・`onSendProgress` による進捗）
 - ベースURL公開: `client.baseUrl` で元URLにアクセス（派生サービス用）
 - 認証: POSTのJSONボディに `i` を自動注入（`authRequired`で制御）
 - 柔軟なトークン供給: 同期・非同期両方に対応（`FutureOr<String?>`）
@@ -100,7 +135,7 @@ Misskey API Core は、Misskeyサーバーと連携するためのDart/Flutter�
 
 ```yaml
 dependencies:
-  misskey_api_core: ^0.0.2-beta
+  misskey_api_core: ^0.0.3-beta
 ```
 
 実行:
@@ -135,6 +170,39 @@ final list = await client.send<List<dynamic>>(
   body: {'limit': 10},
   options: const RequestOptions(idempotent: true),
 );
+
+// マルチパート（例: Drive files/create）
+final formData = FormData.fromMap({
+  'file': await MultipartFile.fromFile('/path/to/image.png', filename: 'image.png'),
+  // `authRequired=true`（既定）のとき `i` は自動注入
+});
+await client.send<Map<String, dynamic>>(
+  '/drive/files/create',
+  body: formData,
+  onSendProgress: (sent, total) {
+    // 進捗UIの更新
+  },
+);
+
+// リクエスト単位の上書き（Content-Type/ヘッダ/extra）
+await client.send(
+  '/some/endpoint',
+  body: {'a': 1},
+  options: const RequestOptions(
+    contentType: 'application/json; charset=utf-8',
+    headers: {'X-Foo': 'bar'},
+    extra: {'traceId': 'abc-123'},
+  ),
+);
+
+// 429時の待機（Retry-After）
+try {
+  await client.send('/rate-limited');
+} on MisskeyApiException catch (e) {
+  if (e.statusCode == 429 && e.retryAfter != null) {
+    await Future.delayed(e.retryAfter!);
+  }
+}
 
 // 派生サービス用にベースURLにアクセス（例: ストリーミング）
 final origin = client.baseUrl;

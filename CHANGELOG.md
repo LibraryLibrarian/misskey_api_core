@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.3-beta] - 2025-09-13
+
+### Added
+- Added support for multipart/form-data uploads (`FormData`). When using POST and `authRequired=true`, the token `i` is automatically injected into `FormData` as well.
+- `MisskeyHttpClient.send` now accepts a `dynamic body` (`Map`/`FormData`/`null`) and supports upload progress callbacks via `onSendProgress`.
+- Added `contentType`, `headers`, and `extra` to `RequestOptions`, allowing per-request overrides.
+- The `Retry-After` value on HTTP 429 is now captured in `MisskeyApiException.retryAfter`.
+
+### Changed
+- Removed the global `Content-Type: application/json`. Content-Type is now automatically inferred per request (or can be explicitly set via `RequestOptions.contentType`). `Accept: application/json` is still set globally.
+- Improved token injection in the interceptor: the token `i` is now injected for all `Map`, `FormData`, and `null` bodies (when POST and `authRequired=true`).
+- Existing error mapping is retained, but now includes the retry wait hint for 429 responses.
+
+### Migration Notes
+- Sending JSON works as before by passing `body: Map` (Dio will infer the Content-Type).
+- If you previously relied on a global fixed `Content-Type`, please specify it via `RequestOptions.contentType` as needed.
+- The signature of `send<T>` has been extended, but existing calls passing a `Map` will continue to work as before.
+
 ## [0.0.2-beta] - 2025-08-19
 
 ### Added
