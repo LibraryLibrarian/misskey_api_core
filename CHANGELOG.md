@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.4-beta] - 2025-10-03
+
+### Fixed
+- Improved error logging: Expected client errors (401/403/404) are now logged at `debug` level instead of `error` level to reduce noise in logs. This prevents cluttering logs with expected errors like unauthorized access or non-public resources.
+
+### Update
+- Update the flutterSDK version to 3.35.5.
+
 ## [0.0.3-beta] - 2025-09-13
 
 ### Added
