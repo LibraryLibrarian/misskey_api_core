@@ -115,9 +115,8 @@ class MisskeyHttpClient {
   static Uri _ensureApiBase(Uri base) {
     // 末尾に `/api` がなければ付与
     final normalized = base.replace(path: base.path.replaceAll(RegExp(r"/+$"), ''));
-    final path = normalized.path.endsWith('/api')
-        ? normalized.path
-        : '${normalized.path.isEmpty ? '' : normalized.path}/api';
+    final path =
+        normalized.path.endsWith('/api') ? normalized.path : '${normalized.path.isEmpty ? '' : normalized.path}/api';
     return normalized.replace(path: path);
   }
 
@@ -217,7 +216,17 @@ class _MisskeyInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     if (enableLog && kDebugMode) {
-      logger.error('ERR ${err.requestOptions.uri}', err, err.stackTrace);
+      // 予期されるクライアントエラー（401/403/404など）はdebugレベルで記録
+      // サーバーエラー（5xx）やネットワークエラーはerrorレベルで記録
+      final statusCode = err.response?.statusCode;
+      final bool isExpectedClientError =
+          statusCode != null && (statusCode == 401 || statusCode == 403 || statusCode == 404);
+
+      if (isExpectedClientError) {
+        logger.debug('ERR ${err.requestOptions.uri} status=$statusCode');
+      } else {
+        logger.error('ERR ${err.requestOptions.uri}', err, err.stackTrace);
+      }
     }
     super.onError(err, handler);
   }
