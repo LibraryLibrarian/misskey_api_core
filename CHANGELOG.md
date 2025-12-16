@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Improved error logging: Expected client errors (401/403/404) are now logged at `debug` level instead of `error` level to reduce noise in logs. This prevents cluttering logs with expected errors like unauthorized access or non-public resources.
 
+### Changed
+- Migrated internal logging from custom print statements to `logger` package
+- Debug logs now respect build mode (verbose in debug, warnings only in release)
+- Logging output format unified with consistent timestamp and level indicators (no emojis)
+
 ### Update
 - Update the flutterSDK version to 3.35.5.
 

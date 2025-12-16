@@ -1,3 +1,5 @@
+import 'package_logger.dart';
+
 /// シンプルなロガーIF。必要に応じて差し替え可能
 abstract class Logger {
   void debug(String message);
@@ -11,29 +13,25 @@ class StdoutLogger implements Logger {
 
   @override
   void debug(String message) {
-    // ignore: avoid_print
-    print('[DEBUG] $message');
+    coreLog.d(message);
   }
 
   @override
   void info(String message) {
-    // ignore: avoid_print
-    print('[INFO] $message');
+    coreLog.i(message);
   }
 
   @override
   void warn(String message) {
-    // ignore: avoid_print
-    print('[WARN] $message');
+    coreLog.w(message);
   }
 
   @override
   void error(String message, [Object? error, StackTrace? stackTrace]) {
-    // ignore: avoid_print
-    print('[ERROR] $message${error != null ? ' error=$error' : ''}');
-    if (stackTrace != null) {
-      // ignore: avoid_print
-      print(stackTrace);
+    if (error != null || stackTrace != null) {
+      coreLog.e(message, error: error, stackTrace: stackTrace);
+    } else {
+      coreLog.e(message);
     }
   }
 }

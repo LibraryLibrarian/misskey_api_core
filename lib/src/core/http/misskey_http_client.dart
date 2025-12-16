@@ -9,6 +9,7 @@ import '../config/misskey_api_config.dart';
 import '../error/misskey_api_exception.dart';
 import '../logging/function_logger.dart';
 import '../logging/logger.dart';
+import '../logging/package_logger.dart';
 import 'request_options.dart' as ro;
 
 /// Misskey API 用のHTTPクライアント
@@ -98,7 +99,7 @@ class MisskeyHttpClient {
         retryIf: (e) => _shouldRetry(e, options.idempotent),
         onRetry: (e) {
           if (config.enableLog && kDebugMode) {
-            (logger ?? const StdoutLogger()).warn('retrying due to: $e');
+            coreLog.w('[HTTP RETRY] due to: $e');
           }
         },
       );
@@ -199,7 +200,7 @@ class _MisskeyInterceptor extends Interceptor {
     }
 
     if (enableLog && kDebugMode) {
-      logger.debug('REQ ${options.method} ${options.uri} data=${options.data}');
+      coreLog.d('[HTTP REQ] ${options.method} ${options.uri} data=${options.data}');
     }
 
     super.onRequest(options, handler);
@@ -208,7 +209,7 @@ class _MisskeyInterceptor extends Interceptor {
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     if (enableLog && kDebugMode) {
-      logger.debug('RES ${response.statusCode} ${response.requestOptions.uri}');
+      coreLog.d('[HTTP RES] ${response.statusCode} ${response.requestOptions.uri}');
     }
     super.onResponse(response, handler);
   }
@@ -223,9 +224,9 @@ class _MisskeyInterceptor extends Interceptor {
           statusCode != null && (statusCode == 401 || statusCode == 403 || statusCode == 404);
 
       if (isExpectedClientError) {
-        logger.debug('ERR ${err.requestOptions.uri} status=$statusCode');
+        coreLog.d('[HTTP ERR] ${err.requestOptions.uri} status=$statusCode');
       } else {
-        logger.error('ERR ${err.requestOptions.uri}', err, err.stackTrace);
+        coreLog.e('[HTTP ERR] ${err.requestOptions.uri}', error: err, stackTrace: err.stackTrace);
       }
     }
     super.onError(err, handler);
