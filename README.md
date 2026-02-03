@@ -1,12 +1,17 @@
-## Misskey API Core Library
+# misskey_api_core
 
-English | [日本語](#日本語)
+[![Pub package](https://img.shields.io/pub/v/misskey_api_core.svg)](https://pub.dev/packages/misskey_api_core)
+[![GitHub License](https://img.shields.io/badge/License-BSD-green.svg)](LICENSE)
 
-### Overview
+A base library that wraps the MisskeyAPI created with Dart.
 
-Misskey API Core is a Dart/Flutter package that provides the core building blocks to interact with Misskey servers. It focuses on a robust HTTP foundation, unified error handling, token injection, and minimal common models (e.g., Meta) so that domain-specific features (Notes/Users/Drive) can be implemented in separate layers.
+[日本語](#日本語)
 
-### Key Features
+## Overview
+
+Misskey API Core is a pure Dart "foundation" library for interacting with Misskey servers. It was primarily created to standardize common functionality when using other Misskey features via API for my own use, but due to its versatility, I'm publishing it on pub.dev as a learning experience in library publication. It focuses on HTTP foundation, unified error handling, automatic token injection, and minimal common models (e.g., Meta), with domain-specific features (Notes/Users/Drive) designed to be implemented in separate layers.
+
+## Key Features
 
 - HTTP foundation: base URL handling (/api), timeouts, idempotent retries (429/5xx/network), request/response logging (debug-only)
 - Multipart uploads: `FormData` support with auto token injection and upload progress callback (`onSendProgress`)
@@ -20,7 +25,7 @@ Misskey API Core is a Dart/Flutter package that provides the core building block
 - Meta refresh: force-refresh cached meta data with `getMeta(refresh: true)`
 - JSON serialization: `json_serializable`-ready common model(s)
 
-### Install
+## Install
 
 Add to `pubspec.yaml`:
 
@@ -35,7 +40,7 @@ Then:
 flutter pub get
 ```
 
-### Quick Start
+## Quick Start
 
 ```dart
 import 'package:misskey_api_core/misskey_api_core.dart';
@@ -103,19 +108,19 @@ void main() async {
 
 See `/example` for a working app including sign-in (with `misskey_auth`), posting a note, timelines, following/followers.
 
-### License
+## License
 
 This project is published by 司書 (LibraryLibrarian) under the 3-Clause BSD License. For details, please see the [LICENSE](LICENSE) file.
 
 ---
 
-## 日本語
+# 日本語
 
-### 概要
+## 概要
 
-Misskey API Core は、Misskeyサーバーと連携するためのDart/Flutter用“基盤”ライブラリです。HTTP基盤、共通例外、トークン自動付与、最低限の共通モデル（例: Meta）にフォーカスし、ノート/ユーザー/Driveなどドメイン固有機能は別レイヤーで実装できるように設計しています。
+MisskeyAPICoreは、Misskeyサーバーと連携するための純Dart“基盤”ライブラリです。主に自分自身が利用する他のMisskeyの機能をAPI経由で利用する際に共通化が必要な為作成しましたが、汎用性がある為ライブラリの公開という経験も兼ねてpub.devにて公開を行っています。HTTP基盤、共通例外、トークン自動付与、最低限の共通モデル（例: Meta）にフォーカスし、ノート/ユーザー/Driveなどドメイン固有機能は別レイヤーで実装できるように設計しています。
 
-### 機能
+## 機能
 
 - HTTP基盤: ベースURL（/api付与）・タイムアウト・冪等時の自動リトライ（429/5xx/ネットワーク）・デバッグ時のみログ
 - マルチパート: `FormData` によるアップロード対応（トークン自動注入・`onSendProgress` による進捗）
@@ -129,7 +134,7 @@ Misskey API Core は、Misskeyサーバーと連携するためのDart/Flutter�
 - メタ更新: `getMeta(refresh: true)` でキャッシュを強制更新
 - JSONシリアライズ: `json_serializable`対応の共通モデル
 
-### インストール
+## インストール
 
 `pubspec.yaml` に追加:
 
@@ -141,10 +146,12 @@ dependencies:
 実行:
 
 ```bash
+dart pub get
+# またはFlutterプロジェクトの場合:
 flutter pub get
 ```
 
-### 使い方
+## 使い方
 
 ```dart
 import 'package:misskey_api_core/misskey_api_core.dart';
@@ -210,6 +217,6 @@ final origin = client.baseUrl;
 
 サンプルアプリ（`/example`）では、`misskey_auth` を使った認証、ノート投稿、ホームタイムライン、フォロー中/フォロワーの取得まで一通り確認できます。
 
-### ライセンス
+## ライセンス
 
 このプロジェクトは司書(LibraryLibrarian)によって、3-Clause BSD Licenseの下で公開されています。詳細は[LICENSE](LICENSE)ファイルをご覧ください。
