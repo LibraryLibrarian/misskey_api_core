@@ -1,15 +1,15 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart' as dio;
-import 'package:test/test.dart';
 import 'package:misskey_api_core/misskey_api_core.dart' as core;
+import 'package:test/test.dart';
 
 class _MetaAdapter implements dio.HttpClientAdapter {
+  _MetaAdapter(this.response);
   /// `/api/meta`に対して固定のレスポンスを返すテスト用アダプタ
   /// 呼び出し回数をカウントし、キャッシュが効いているかを検証。
   final Map<String, dynamic> response;
   int calls = 0;
-  _MetaAdapter(this.response);
 
   @override
   void close({bool force = false}) {}

@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart' as dio;
-import 'package:test/test.dart';
 import 'package:misskey_api_core/misskey_api_core.dart' as core;
+import 'package:test/test.dart';
 
 class _ErrorAdapter implements dio.HttpClientAdapter {
-  final int statusCode;
   _ErrorAdapter(this.statusCode);
+  final int statusCode;
 
   @override
   void close({bool force = false}) {}
@@ -32,8 +32,8 @@ class _ErrorAdapter implements dio.HttpClientAdapter {
 }
 
 class MyUnifiedException implements Exception {
-  final String message;
   const MyUnifiedException(this.message);
+  final String message;
 }
 
 void main() {

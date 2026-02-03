@@ -1,24 +1,24 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart' as dio;
-import 'package:test/test.dart';
 import 'package:misskey_api_core/misskey_api_core.dart' as core;
+import 'package:test/test.dart';
 
 /// テスト用の可変レスポンスを返すHttpClientAdapter
 ///
-/// このクラスはDioの[HttpClientAdapter]を実装し、
+/// このクラスはDioの[dio.HttpClientAdapter]を実装し、
 /// [response]プロパティで指定されたMapをJSONとして返すダミーのHTTPクライアントアダプタ
 /// fetchが呼ばれるたびに[calls]がインクリメントされ、
 /// サーバーレスポンスを動的に書き換えてテストできるようにする
 class _MutableMetaAdapter implements dio.HttpClientAdapter {
+
+  /// [response]で初期化
+  _MutableMetaAdapter(this.response);
   /// 現在返すレスポンス(JSONとしてシリアライズされる)
   Map<String, dynamic> response;
 
   /// fetchが呼ばれた回数
   int calls = 0;
-
-  /// [response]で初期化
-  _MutableMetaAdapter(this.response);
 
   @override
   void close({bool force = false}) {}

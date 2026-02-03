@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:misskey_api_core/misskey_api_core.dart' as core;
+import 'package:test/test.dart';
 
 void main() {
   /// MisskeyHttpClientの `baseUrl` プロパティが、

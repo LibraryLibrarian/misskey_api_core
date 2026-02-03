@@ -14,16 +14,6 @@ import 'request_options.dart' as ro;
 
 /// Misskey API 用のHTTPクライアント
 class MisskeyHttpClient {
-  final MisskeyApiConfig config;
-  final TokenProvider? tokenProvider;
-  final Logger? logger;
-  final Object Function(Object error)? exceptionMapper;
-
-  /// 公開ベースURL（`/api` 付与前の元URL）
-  Uri get baseUrl => config.baseUrl;
-
-  late final Dio _dio;
-
   MisskeyHttpClient({
     required this.config,
     this.tokenProvider,
@@ -56,6 +46,15 @@ class MisskeyHttpClient {
       ),
     );
   }
+  final MisskeyApiConfig config;
+  final TokenProvider? tokenProvider;
+  final Logger? logger;
+  final Object Function(Object error)? exceptionMapper;
+
+  /// 公開ベースURL（`/api` 付与前の元URL）
+  Uri get baseUrl => config.baseUrl;
+
+  late final Dio _dio;
 
   /// `path` は `/notes/create` のように `/api` より後のパスを渡す
   ///
@@ -74,7 +73,6 @@ class MisskeyHttpClient {
       maxAttempts: options.idempotent ? config.maxRetries : 1,
       delayFactor: config.retryInitialDelay,
       maxDelay: config.retryMaxDelay,
-      randomizationFactor: 0.25,
     );
 
     // リトライオプションに従い、Dioを使ってHTTPリクエストを送信し、必要に応じてリトライを行う処理
@@ -87,7 +85,7 @@ class MisskeyHttpClient {
             headers: options.headers.isEmpty ? null : Map<String, dynamic>.from(options.headers),
             extra: {'authRequired': options.authRequired, ...options.extra},
           );
-          final Response<dynamic> res = await _dio.request(
+          final res = await _dio.request(
             path.startsWith('/') ? path : '/$path',
             data: body,
             options: reqOptions,
@@ -115,7 +113,7 @@ class MisskeyHttpClient {
 
   static Uri _ensureApiBase(Uri base) {
     // 末尾に `/api` がなければ付与
-    final normalized = base.replace(path: base.path.replaceAll(RegExp(r"/+$"), ''));
+    final normalized = base.replace(path: base.path.replaceAll(RegExp(r'/+$'), ''));
     final path =
         normalized.path.endsWith('/api') ? normalized.path : '${normalized.path.isEmpty ? '' : normalized.path}/api';
     return normalized.replace(path: path);
@@ -139,7 +137,7 @@ class MisskeyHttpClient {
 
   static MisskeyApiException _mapDioError(DioException e) {
     final status = e.response?.statusCode;
-    String message = e.message ?? 'HTTP error';
+    var message = e.message ?? 'HTTP error';
     String? code;
     Duration? retryAfter;
     final data = e.response?.data;
@@ -169,14 +167,13 @@ class MisskeyHttpClient {
 }
 
 class _MisskeyInterceptor extends Interceptor {
+  _MisskeyInterceptor({required this.tokenProvider, required this.enableLog, required this.logger});
   final TokenProvider? tokenProvider;
   final bool enableLog;
   final Logger logger;
 
-  _MisskeyInterceptor({required this.tokenProvider, required this.enableLog, required this.logger});
-
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     // 認証付与（POSTのみ、Map/FormData/空bodyに対応）
     final extra = options.extra;
     final authRequired = (extra['authRequired'] as bool?) ?? true;
@@ -220,8 +217,7 @@ class _MisskeyInterceptor extends Interceptor {
       // 予期されるクライアントエラー（401/403/404など）はdebugレベルで記録
       // サーバーエラー（5xx）やネットワークエラーはerrorレベルで記録
       final statusCode = err.response?.statusCode;
-      final bool isExpectedClientError =
-          statusCode != null && (statusCode == 401 || statusCode == 403 || statusCode == 404);
+      final isExpectedClientError = statusCode != null && (statusCode == 401 || statusCode == 403 || statusCode == 404);
 
       if (isExpectedClientError) {
         coreLog.d('[HTTP ERR] ${err.requestOptions.uri} status=$statusCode');

@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:misskey_api_core/misskey_api_core.dart';
+import 'package:test/test.dart';
 
 void main() {
   /// 公開APIのスモークテスト

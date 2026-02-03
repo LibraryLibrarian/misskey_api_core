@@ -1,15 +1,15 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart' as dio;
-import 'package:test/test.dart';
 import 'package:misskey_api_core/misskey_api_core.dart' as core;
+import 'package:test/test.dart';
 
 class _ErrorAdapter implements dio.HttpClientAdapter {
+  _ErrorAdapter(this.status, this.body);
+
   /// 指定ステータス/ボディで常にエラーレスポンスを返すテスト用アダプタ
   final int status;
   final Map<String, dynamic> body;
-
-  _ErrorAdapter(this.status, this.body);
 
   @override
   void close({bool force = false}) {}

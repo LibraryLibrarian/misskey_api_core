@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart' as dio;
-import 'package:test/test.dart';
 import 'package:misskey_api_core/misskey_api_core.dart' as core;
+import 'package:test/test.dart';
 
 class _CapturingAdapter implements dio.HttpClientAdapter {
   /// テスト用のDioアダプタ
@@ -43,9 +43,7 @@ void main() {
 
     await client.send<Map<String, dynamic>>(
       '/dummy',
-      method: 'POST',
       body: {'a': 1},
-      options: const core.RequestOptions(authRequired: true),
     );
 
     expect(adapter.lastOptions.data is Map<String, dynamic>, true);
@@ -65,7 +63,6 @@ void main() {
 
     await client.send<Map<String, dynamic>>(
       '/dummy',
-      method: 'POST',
       body: {'a': 1},
       options: const core.RequestOptions(authRequired: false),
     );

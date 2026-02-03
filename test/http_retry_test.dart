@@ -2,15 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart' as dio;
-import 'package:test/test.dart';
 import 'package:misskey_api_core/misskey_api_core.dart' as core;
+import 'package:test/test.dart';
 
 class _FlakyAdapter implements dio.HttpClientAdapter {
+  _FlakyAdapter(this.failCount);
   /// 先頭の数回は503を返し、その後200を返す不安定アダプタ
   /// リトライの有無/回数を検証するために試行回数を記録
   int attempts = 0;
   final int failCount;
-  _FlakyAdapter(this.failCount);
 
   @override
   void close({bool force = false}) {}
@@ -43,8 +43,6 @@ void main() {
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(
         baseUrl: Uri.parse('https://example.com'),
-        enableLog: false,
-        maxRetries: 3,
         retryInitialDelay: const Duration(milliseconds: 1),
         retryMaxDelay: const Duration(milliseconds: 2),
       ),
@@ -53,7 +51,6 @@ void main() {
 
     final res = await client.send<Map<String, dynamic>>(
       '/dummy',
-      method: 'POST',
       body: const {},
       options: const core.RequestOptions(idempotent: true),
     );
@@ -68,8 +65,6 @@ void main() {
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(
         baseUrl: Uri.parse('https://example.com'),
-        enableLog: false,
-        maxRetries: 3,
         retryInitialDelay: const Duration(milliseconds: 1),
         retryMaxDelay: const Duration(milliseconds: 2),
       ),
@@ -79,9 +74,7 @@ void main() {
     await expectLater(
       () async => client.send<Map<String, dynamic>>(
         '/dummy',
-        method: 'POST',
         body: const {},
-        options: const core.RequestOptions(idempotent: false),
       ),
       throwsA(isA<core.MisskeyApiException>().having((e) => e.statusCode, 'status', 503)),
     );

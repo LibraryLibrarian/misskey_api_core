@@ -4,10 +4,9 @@ import '../models/meta.dart';
 
 /// `/api/meta` を取得するクライアント
 class MetaClient {
+  MetaClient(this.http);
   final MisskeyHttpClient http;
   Meta? _cached;
-
-  MetaClient(this.http);
 
   /// Misskeyサーバの `/api/meta` エンドポイントからメタ情報を取得する
   ///
@@ -17,7 +16,6 @@ class MetaClient {
     if (!refresh && _cached != null) return _cached!;
     final res = await http.send<Map<String, dynamic>>(
       '/meta',
-      method: 'POST',
       body: const {},
       options: const RequestOptions(authRequired: false, idempotent: true),
     );
