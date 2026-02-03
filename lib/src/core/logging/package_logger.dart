@@ -1,5 +1,6 @@
-import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:logger/logger.dart' as pkg;
+
+import '../constants.dart';
 
 /// Misskey API Core ライブラリ共通のロガーを提供
 ///

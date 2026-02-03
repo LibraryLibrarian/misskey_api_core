@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:retry/retry.dart';
 
 import '../auth/token_provider.dart';
 import '../config/misskey_api_config.dart';
+import '../constants.dart';
 import '../error/misskey_api_exception.dart';
 import '../logging/function_logger.dart';
 import '../logging/logger.dart';
