@@ -7,6 +7,7 @@ import 'package:test/test.dart';
 
 class _FlakyAdapter implements dio.HttpClientAdapter {
   _FlakyAdapter(this.failCount);
+
   /// 先頭の数回は503を返し、その後200を返す不安定アダプタ
   /// リトライの有無/回数を検証するために試行回数を記録
   int attempts = 0;
@@ -76,7 +77,8 @@ void main() {
         '/dummy',
         body: const {},
       ),
-      throwsA(isA<core.MisskeyApiException>().having((e) => e.statusCode, 'status', 503)),
+      throwsA(isA<core.MisskeyApiException>()
+          .having((e) => e.statusCode, 'status', 503)),
     );
     // 再試行しないこと（1回のみ）
     expect(adapter.attempts, 1);

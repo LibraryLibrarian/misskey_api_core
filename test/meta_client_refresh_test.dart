@@ -11,9 +11,9 @@ import 'package:test/test.dart';
 /// fetchが呼ばれるたびに[calls]がインクリメントされ、
 /// サーバーレスポンスを動的に書き換えてテストできるようにする
 class _MutableMetaAdapter implements dio.HttpClientAdapter {
-
   /// [response]で初期化
   _MutableMetaAdapter(this.response);
+
   /// 現在返すレスポンス(JSONとしてシリアライズされる)
   Map<String, dynamic> response;
 

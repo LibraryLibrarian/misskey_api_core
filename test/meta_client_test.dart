@@ -6,6 +6,7 @@ import 'package:test/test.dart';
 
 class _MetaAdapter implements dio.HttpClientAdapter {
   _MetaAdapter(this.response);
+
   /// `/api/meta`に対して固定のレスポンスを返すテスト用アダプタ
   /// 呼び出し回数をカウントし、キャッシュが効いているかを検証。
   final Map<String, dynamic> response;

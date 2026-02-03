@@ -9,7 +9,8 @@ void main() {
   /// - `baseUrl` には `/api` が付与されていない元のURLがそのまま格納されていること
   test('MisskeyHttpClientのbaseUrlは元のURL（/api付与前）を公開する', () {
     final base = Uri.parse('https://host.example/app');
-    final http = core.MisskeyHttpClient(config: core.MisskeyApiConfig(baseUrl: base));
+    final http =
+        core.MisskeyHttpClient(config: core.MisskeyApiConfig(baseUrl: base));
     expect(http.baseUrl, base);
   });
 }

@@ -49,12 +49,14 @@ void main() {
       httpClientAdapter: _ErrorAdapter(500),
       exceptionMapper: (Object error) {
         if (error is core.MisskeyApiException) {
-          return MyUnifiedException('HTTP:${error.statusCode} ${error.message}');
+          return MyUnifiedException(
+              'HTTP:${error.statusCode} ${error.message}');
         }
         return error;
       },
     );
 
-    expect(() async => http.send('/x', body: const {}), throwsA(isA<MyUnifiedException>()));
+    expect(() async => http.send('/x', body: const {}),
+        throwsA(isA<MyUnifiedException>()));
   });
 }

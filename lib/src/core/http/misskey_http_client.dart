@@ -82,7 +82,9 @@ class MisskeyHttpClient {
           final reqOptions = Options(
             method: method,
             contentType: options.contentType,
-            headers: options.headers.isEmpty ? null : Map<String, dynamic>.from(options.headers),
+            headers: options.headers.isEmpty
+                ? null
+                : Map<String, dynamic>.from(options.headers),
             extra: {'authRequired': options.authRequired, ...options.extra},
           );
           final res = await _dio.request(
@@ -113,9 +115,11 @@ class MisskeyHttpClient {
 
   static Uri _ensureApiBase(Uri base) {
     // 末尾に `/api` がなければ付与
-    final normalized = base.replace(path: base.path.replaceAll(RegExp(r'/+$'), ''));
-    final path =
-        normalized.path.endsWith('/api') ? normalized.path : '${normalized.path.isEmpty ? '' : normalized.path}/api';
+    final normalized =
+        base.replace(path: base.path.replaceAll(RegExp(r'/+$'), ''));
+    final path = normalized.path.endsWith('/api')
+        ? normalized.path
+        : '${normalized.path.isEmpty ? '' : normalized.path}/api';
     return normalized.replace(path: path);
   }
 
@@ -162,18 +166,27 @@ class MisskeyHttpClient {
         retryAfter = Duration(seconds: seconds);
       }
     }
-    return MisskeyApiException(statusCode: status, code: code, message: message, raw: e, retryAfter: retryAfter);
+    return MisskeyApiException(
+        statusCode: status,
+        code: code,
+        message: message,
+        raw: e,
+        retryAfter: retryAfter);
   }
 }
 
 class _MisskeyInterceptor extends Interceptor {
-  _MisskeyInterceptor({required this.tokenProvider, required this.enableLog, required this.logger});
+  _MisskeyInterceptor(
+      {required this.tokenProvider,
+      required this.enableLog,
+      required this.logger});
   final TokenProvider? tokenProvider;
   final bool enableLog;
   final Logger logger;
 
   @override
-  Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  Future<void> onRequest(
+      RequestOptions options, RequestInterceptorHandler handler) async {
     // 認証付与（POSTのみ、Map/FormData/空bodyに対応）
     final extra = options.extra;
     final authRequired = (extra['authRequired'] as bool?) ?? true;
@@ -197,7 +210,8 @@ class _MisskeyInterceptor extends Interceptor {
     }
 
     if (enableLog && kDebugMode) {
-      coreLog.d('[HTTP REQ] ${options.method} ${options.uri} data=${options.data}');
+      coreLog.d(
+          '[HTTP REQ] ${options.method} ${options.uri} data=${options.data}');
     }
 
     super.onRequest(options, handler);
@@ -206,7 +220,8 @@ class _MisskeyInterceptor extends Interceptor {
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     if (enableLog && kDebugMode) {
-      coreLog.d('[HTTP RES] ${response.statusCode} ${response.requestOptions.uri}');
+      coreLog.d(
+          '[HTTP RES] ${response.statusCode} ${response.requestOptions.uri}');
     }
     super.onResponse(response, handler);
   }
@@ -217,12 +232,14 @@ class _MisskeyInterceptor extends Interceptor {
       // 予期されるクライアントエラー（401/403/404など）はdebugレベルで記録
       // サーバーエラー（5xx）やネットワークエラーはerrorレベルで記録
       final statusCode = err.response?.statusCode;
-      final isExpectedClientError = statusCode != null && (statusCode == 401 || statusCode == 403 || statusCode == 404);
+      final isExpectedClientError = statusCode != null &&
+          (statusCode == 401 || statusCode == 403 || statusCode == 404);
 
       if (isExpectedClientError) {
         coreLog.d('[HTTP ERR] ${err.requestOptions.uri} status=$statusCode');
       } else {
-        coreLog.e('[HTTP ERR] ${err.requestOptions.uri}', error: err, stackTrace: err.stackTrace);
+        coreLog.e('[HTTP ERR] ${err.requestOptions.uri}',
+            error: err, stackTrace: err.stackTrace);
       }
     }
     super.onError(err, handler);
