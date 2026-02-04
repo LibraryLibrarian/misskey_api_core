@@ -1,12 +1,13 @@
 /// Misskey API 呼び出し時の共通例外
 class MisskeyApiException implements Exception {
   /// 共通例外コンテナ
-  const MisskeyApiException(
-      {this.statusCode,
-      this.code,
-      required this.message,
-      this.raw,
-      this.retryAfter});
+  const MisskeyApiException({
+    this.statusCode,
+    this.code,
+    required this.message,
+    this.raw,
+    this.retryAfter,
+  });
 
   /// HTTP ステータスコード
   final int? statusCode;
@@ -24,6 +25,12 @@ class MisskeyApiException implements Exception {
   final Duration? retryAfter;
 
   @override
-  String toString() =>
-      'MisskeyApiException(statusCode: $statusCode, code: $code, message: $message, retryAfter: $retryAfter)';
+  String toString() {
+    return 'MisskeyApiException('
+        'statusCode: $statusCode, '
+        'code: $code, '
+        'message: $message, '
+        'retryAfter: $retryAfter'
+        ')';
+  }
 }

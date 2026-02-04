@@ -15,7 +15,7 @@ class _ErrorAdapter implements dio.HttpClientAdapter {
   Future<dio.ResponseBody> fetch(
     dio.RequestOptions options,
     Stream<List<int>>? requestStream,
-    Future? cancelFuture,
+    Future<dynamic>? cancelFuture,
   ) async {
     return dio.ResponseBody.fromBytes(
       utf8.encode(
@@ -32,8 +32,7 @@ class _ErrorAdapter implements dio.HttpClientAdapter {
 }
 
 class MyUnifiedException implements Exception {
-  const MyUnifiedException(this.message);
-  final String message;
+  const MyUnifiedException();
 }
 
 void main() {
@@ -43,20 +42,26 @@ void main() {
   ///   独自の MyUnifiedException に変換する関数を指定する
   /// - サーバーが 500 エラー（Misskey 形式のエラー）を返す状況を模擬し、
   ///   send() 実行時に MyUnifiedException が投げられることを確認する
-  test('exceptionMapperでMisskeyApiExceptionをカスタム例外に変換できる', () async {
+  test('exceptionMapperでMisskeyApiExceptionをカスタム例外に変換できる', () {
     final http = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(baseUrl: Uri.parse('https://example.com')),
       httpClientAdapter: _ErrorAdapter(500),
       exceptionMapper: (Object error) {
         if (error is core.MisskeyApiException) {
-          return MyUnifiedException(
-              'HTTP:${error.statusCode} ${error.message}');
+          return const MyUnifiedException();
         }
-        return error;
+        return error is Exception
+            ? error
+            : core.MisskeyApiException(
+                message: 'Unexpected error',
+                raw: error,
+              );
       },
     );
 
-    expect(() async => http.send('/x', body: const {}),
-        throwsA(isA<MyUnifiedException>()));
+    expect(
+      () => http.send<dynamic>('/x', body: const <String, dynamic>{}),
+      throwsA(isA<MyUnifiedException>()),
+    );
   });
 }

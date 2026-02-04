@@ -16,7 +16,7 @@ class MetaClient {
     if (!refresh && _cached != null) return _cached!;
     final res = await http.send<Map<String, dynamic>>(
       '/meta',
-      body: const {},
+      body: const <String, dynamic>{},
       options: const RequestOptions(authRequired: false, idempotent: true),
     );
     _cached = Meta.fromJson(res);

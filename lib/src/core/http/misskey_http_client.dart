@@ -49,7 +49,7 @@ class MisskeyHttpClient {
   final MisskeyApiConfig config;
   final TokenProvider? tokenProvider;
   final Logger? logger;
-  final Object Function(Object error)? exceptionMapper;
+  final Exception Function(Object error)? exceptionMapper;
 
   /// 公開ベースURL（`/api` 付与前の元URL）
   Uri get baseUrl => config.baseUrl;
@@ -85,9 +85,12 @@ class MisskeyHttpClient {
             headers: options.headers.isEmpty
                 ? null
                 : Map<String, dynamic>.from(options.headers),
-            extra: {'authRequired': options.authRequired, ...options.extra},
+            extra: {
+              'authRequired': options.authRequired,
+              ...options.extra,
+            },
           );
-          final res = await _dio.request(
+          final res = await _dio.request<dynamic>(
             path.startsWith('/') ? path : '/$path',
             data: body,
             options: reqOptions,
@@ -107,7 +110,7 @@ class MisskeyHttpClient {
     } on DioException catch (e) {
       final err = _mapDioError(e);
       throw exceptionMapper != null ? exceptionMapper!(err) : err;
-    } catch (e) {
+    } on Exception catch (e) {
       final err = MisskeyApiException(message: 'Unexpected error', raw: e);
       throw exceptionMapper != null ? exceptionMapper!(err) : err;
     }
@@ -115,8 +118,9 @@ class MisskeyHttpClient {
 
   static Uri _ensureApiBase(Uri base) {
     // 末尾に `/api` がなければ付与
-    final normalized =
-        base.replace(path: base.path.replaceAll(RegExp(r'/+$'), ''));
+    final normalized = base.replace(
+      path: base.path.replaceAll(RegExp(r'/+$'), ''),
+    );
     final path = normalized.path.endsWith('/api')
         ? normalized.path
         : '${normalized.path.isEmpty ? '' : normalized.path}/api';
@@ -167,26 +171,30 @@ class MisskeyHttpClient {
       }
     }
     return MisskeyApiException(
-        statusCode: status,
-        code: code,
-        message: message,
-        raw: e,
-        retryAfter: retryAfter);
+      statusCode: status,
+      code: code,
+      message: message,
+      raw: e,
+      retryAfter: retryAfter,
+    );
   }
 }
 
 class _MisskeyInterceptor extends Interceptor {
-  _MisskeyInterceptor(
-      {required this.tokenProvider,
-      required this.enableLog,
-      required this.logger});
+  _MisskeyInterceptor({
+    required this.tokenProvider,
+    required this.enableLog,
+    required this.logger,
+  });
   final TokenProvider? tokenProvider;
   final bool enableLog;
   final Logger logger;
 
   @override
   Future<void> onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) async {
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     // 認証付与（POSTのみ、Map/FormData/空bodyに対応）
     final extra = options.extra;
     final authRequired = (extra['authRequired'] as bool?) ?? true;
@@ -211,17 +219,22 @@ class _MisskeyInterceptor extends Interceptor {
 
     if (enableLog && kDebugMode) {
       coreLog.d(
-          '[HTTP REQ] ${options.method} ${options.uri} data=${options.data}');
+        '[HTTP REQ] ${options.method} ${options.uri} data=${options.data}',
+      );
     }
 
     super.onRequest(options, handler);
   }
 
   @override
-  void onResponse(Response response, ResponseInterceptorHandler handler) {
+  void onResponse(
+    Response<dynamic> response,
+    ResponseInterceptorHandler handler,
+  ) {
     if (enableLog && kDebugMode) {
       coreLog.d(
-          '[HTTP RES] ${response.statusCode} ${response.requestOptions.uri}');
+        '[HTTP RES] ${response.statusCode} ${response.requestOptions.uri}',
+      );
     }
     super.onResponse(response, handler);
   }
@@ -238,8 +251,11 @@ class _MisskeyInterceptor extends Interceptor {
       if (isExpectedClientError) {
         coreLog.d('[HTTP ERR] ${err.requestOptions.uri} status=$statusCode');
       } else {
-        coreLog.e('[HTTP ERR] ${err.requestOptions.uri}',
-            error: err, stackTrace: err.stackTrace);
+        coreLog.e(
+          '[HTTP ERR] ${err.requestOptions.uri}',
+          error: err,
+          stackTrace: err.stackTrace,
+        );
       }
     }
     super.onError(err, handler);

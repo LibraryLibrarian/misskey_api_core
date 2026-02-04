@@ -16,7 +16,7 @@ class _CapturingAdapter implements dio.HttpClientAdapter {
   Future<dio.ResponseBody> fetch(
     dio.RequestOptions options,
     Stream<List<int>>? requestStream,
-    Future? cancelFuture,
+    Future<void>? cancelFuture,
   ) async {
     lastOptions = options;
     // 回答は常に200/JSONで返す
@@ -37,7 +37,7 @@ void main() {
     final adapter = _CapturingAdapter();
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(baseUrl: Uri.parse('https://example.com')),
-      tokenProvider: () async => 'TOKEN',
+      tokenProvider: () => Future.value('TOKEN'),
       httpClientAdapter: adapter,
     );
 
@@ -57,7 +57,7 @@ void main() {
     final adapter = _CapturingAdapter();
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(baseUrl: Uri.parse('https://example.com')),
-      tokenProvider: () async => 'TOKEN',
+      tokenProvider: () => Future.value('TOKEN'),
       httpClientAdapter: adapter,
     );
 

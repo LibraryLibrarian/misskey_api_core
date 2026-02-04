@@ -18,7 +18,7 @@ class _ErrorAdapter implements dio.HttpClientAdapter {
   Future<dio.ResponseBody> fetch(
     dio.RequestOptions options,
     Stream<List<int>>? requestStream,
-    Future? cancelFuture,
+    Future<void>? cancelFuture,
   ) async {
     final bytes = utf8.encode(jsonEncode(body));
     return dio.ResponseBody.fromBytes(
@@ -34,7 +34,7 @@ class _ErrorAdapter implements dio.HttpClientAdapter {
 void main() {
   /// `{ error: { code, message } }` 形式のMisskeyエラーが
   /// `MisskeyApiException(code, message, statusCode)` に正規化されることを検証
-  test('Misskeyエラーフォーマットが正規化されることを検証', () async {
+  test('Misskeyエラーフォーマットが正規化されることを検証', () {
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(baseUrl: Uri.parse('https://example.com')),
       httpClientAdapter: _ErrorAdapter(400, {
@@ -42,8 +42,8 @@ void main() {
       }),
     );
 
-    expect(
-      () async => client.send('/dummy', body: const {}),
+    return expectLater(
+      client.send<dynamic>('/dummy', body: const <String, dynamic>{}),
       throwsA(
         isA<core.MisskeyApiException>()
             .having((e) => e.code, 'code', 'SOME_ERROR')
@@ -55,15 +55,17 @@ void main() {
 
   /// `{ code, message }` のフラットなエラーフォーマットも
   /// 同様に正規化されることを検証する
-  test('フラットなエラーフォーマットも正規化されることを検証', () async {
+  test('フラットなエラーフォーマットも正規化されることを検証', () {
     final client = core.MisskeyHttpClient(
       config: core.MisskeyApiConfig(baseUrl: Uri.parse('https://example.com')),
-      httpClientAdapter:
-          _ErrorAdapter(403, {'code': 'FORBIDDEN', 'message': 'nope'}),
+      httpClientAdapter: _ErrorAdapter(403, {
+        'code': 'FORBIDDEN',
+        'message': 'nope',
+      }),
     );
 
-    expect(
-      () async => client.send('/dummy', body: const {}),
+    return expectLater(
+      client.send<dynamic>('/dummy', body: const <String, dynamic>{}),
       throwsA(
         isA<core.MisskeyApiException>()
             .having((e) => e.code, 'code', 'FORBIDDEN')

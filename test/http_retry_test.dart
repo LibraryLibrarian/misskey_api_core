@@ -20,7 +20,7 @@ class _FlakyAdapter implements dio.HttpClientAdapter {
   Future<dio.ResponseBody> fetch(
     dio.RequestOptions options,
     Stream<List<int>>? requestStream,
-    Future? cancelFuture,
+    Future<void>? cancelFuture,
   ) async {
     attempts++;
     if (attempts <= failCount) {
@@ -52,7 +52,7 @@ void main() {
 
     final res = await client.send<Map<String, dynamic>>(
       '/dummy',
-      body: const {},
+      body: const <String, dynamic>{},
       options: const core.RequestOptions(idempotent: true),
     );
 
@@ -73,12 +73,17 @@ void main() {
     );
 
     await expectLater(
-      () async => client.send<Map<String, dynamic>>(
+      () => client.send<Map<String, dynamic>>(
         '/dummy',
-        body: const {},
+        body: const <String, dynamic>{},
       ),
-      throwsA(isA<core.MisskeyApiException>()
-          .having((e) => e.statusCode, 'status', 503)),
+      throwsA(
+        isA<core.MisskeyApiException>().having(
+          (e) => e.statusCode,
+          'status',
+          503,
+        ),
+      ),
     );
     // 再試行しないこと（1回のみ）
     expect(adapter.attempts, 1);

@@ -19,7 +19,7 @@ class _MetaAdapter implements dio.HttpClientAdapter {
   Future<dio.ResponseBody> fetch(
     dio.RequestOptions options,
     Stream<List<int>>? requestStream,
-    Future? cancelFuture,
+    Future<void>? cancelFuture,
   ) async {
     calls++;
     return dio.ResponseBody.fromBytes(

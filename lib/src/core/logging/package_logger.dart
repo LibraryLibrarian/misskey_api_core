@@ -13,7 +13,7 @@ final pkg.Logger coreLog = pkg.Logger(
 
 /// カスタムログプリンター
 ///
-/// 出力形式: [misskey_api_core] [LEVEL] YYYY-MM-DD HH:MM:SS.ffffff メッセージ
+/// 出力形式: `[misskey_api_core] [LEVEL] YYYY-MM-DD HH:MM:SS.ffffff メッセージ`
 class _CustomLogPrinter extends pkg.LogPrinter {
   static final Map<pkg.Level, String> _levelLabels = {
     pkg.Level.trace: 'TRACE',
