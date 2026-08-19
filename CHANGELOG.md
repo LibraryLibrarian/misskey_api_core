@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-08-20
+
+### Deprecated
+
+- Deprecated this package in favor of `misskey_client`.
+- Existing releases remain available and will not be retracted.
+- No public API has been removed in this release.
+
+### Documentation
+
+- Added a migration guide from `misskey_api_core` to `misskey_client`.
+- Added deprecation notices to the README and package description.
+
 ## [1.0.0] - 2026-02-04
 
 ### Changed

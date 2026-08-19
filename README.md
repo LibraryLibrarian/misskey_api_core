@@ -1,3 +1,15 @@
+> [!WARNING]
+> **Deprecated / 非推奨**
+>
+> This package is no longer actively maintained. Its functionality has been
+> superseded by [`misskey_client`](https://pub.dev/packages/misskey_client).
+>
+> このパッケージは非推奨です。提供していた機能は
+> [`misskey_client`](https://pub.dev/packages/misskey_client) に統合されています。
+>
+> Existing releases will remain available and will not be retracted. See the
+> [migration guide](MIGRATION_TO_MISSKEY_CLIENT.md).
+
 # misskey_api_core
 
 [![Pub package](https://img.shields.io/pub/v/misskey_api_core.svg)](https://pub.dev/packages/misskey_api_core)
@@ -25,14 +37,27 @@ Misskey API Core is a pure Dart "foundation" library for interacting with Misske
 - Meta refresh: force-refresh cached meta data with `getMeta(refresh: true)`
 - JSON serialization: `json_serializable`-ready common model(s)
 
-## Install
+## Migration and legacy installation
+
+For new projects, use `misskey_client`:
 
 Add to `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  misskey_api_core: ^0.0.3-beta
+  misskey_client: ^1.0.0-beta.7
 ```
+
+Existing projects can continue to resolve the final `misskey_api_core` release
+while they migrate:
+
+```yaml
+dependencies:
+  misskey_api_core: ^1.0.1
+```
+
+See [Migrating to misskey_client](MIGRATION_TO_MISSKEY_CLIENT.md) for the API
+mapping and behavioral differences.
 
 Then:
 
@@ -40,7 +65,10 @@ Then:
 flutter pub get
 ```
 
-## Quick Start
+## Legacy quick start
+
+The following example is retained for existing users. New code should use
+`misskey_client` as described in the migration guide.
 
 ```dart
 import 'package:misskey_api_core/misskey_api_core.dart';
@@ -134,14 +162,26 @@ MisskeyAPICoreは、Misskeyサーバーと連携するための純Dart“基盤�
 - メタ更新: `getMeta(refresh: true)` でキャッシュを強制更新
 - JSONシリアライズ: `json_serializable`対応の共通モデル
 
-## インストール
+## 移行と既存利用者向けインストール
+
+新規プロジェクトでは `misskey_client` を利用してください。
 
 `pubspec.yaml` に追加:
 
 ```yaml
 dependencies:
-  misskey_api_core: ^0.0.3-beta
+  misskey_client: ^1.0.0-beta.7
 ```
+
+既存プロジェクトは、移行が完了するまで最終版を引き続き解決できます。
+
+```yaml
+dependencies:
+  misskey_api_core: ^1.0.1
+```
+
+APIの対応関係と動作上の差異は
+[misskey_clientへの移行ガイド](MIGRATION_TO_MISSKEY_CLIENT.md)を参照してください。
 
 実行:
 
@@ -151,7 +191,10 @@ dart pub get
 flutter pub get
 ```
 
-## 使い方
+## 既存利用者向けの使い方
+
+以下の例は既存利用者向けに残しています。新規コードでは移行ガイドに従って
+`misskey_client` を利用してください。
 
 ```dart
 import 'package:misskey_api_core/misskey_api_core.dart';

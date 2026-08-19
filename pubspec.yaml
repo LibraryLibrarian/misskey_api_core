@@ -1,9 +1,9 @@
 name: misskey_api_core
-version: 1.0.0
+version: 1.0.1
 homepage: https://librarylibrarian.com/
 environment:
   sdk: ">=3.5.0 <4.0.0"
-description: A library to make it easy to use the Misskey API in your Flutter and Dart apps.
+description: Deprecated in favor of misskey_client. Existing releases remain available for current users; see the migration guide.
 dependencies:
   dio: ^5.9.0
   http: ^1.5.0
